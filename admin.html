@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 페이지 - 오소마케팅</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="background: #f5f6fa;">
+    <!-- 관리자 헤더 -->
+    <header class="admin-header">
+        <h1>예약 관리 시스템</h1>
+        <nav class="admin-nav">
+            <a href="index.html" class="nav-btn">고객 페이지</a>
+            <button class="nav-btn active" onclick="showSection('dashboard')">대시보드</button>
+            <button class="nav-btn" onclick="showSection('reservations')">예약 목록</button>
+            <button class="nav-btn" onclick="showSection('products')">상품 등록</button>
+            <button class="nav-btn" onclick="showSection('bookings')">예약현황</button>
+        </nav>
+    </header>
+
+    <main class="admin-main">
+        <!-- 대시보드 섹션 -->
+        <div id="dashboard-section" class="section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalReservations">0</h3>
+                    <p>전체 예약</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="todayReservations">0</h3>
+                    <p>오늘 예약</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="pendingReservations">0</h3>
+                    <p>대기 중</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="confirmedReservations">0</h3>
+                    <p>확정 예약</p>
+                </div>
+            </div>
+
+            <!-- 최근 예약 목록 -->
+            <div class="reservations-section">
+                <div class="section-header">
+                    <h2>최근 예약</h2>
+                </div>
+                <!-- 빈 상태 메시지 (대시보드) -->
+                <div id="dashboardEmptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>아직 예약이 없습니다</h3>
+                        <p>첫 번째 예약을 받아보세요!</p>
+                        <a href="index.html" class="empty-state-btn">예약 페이지로 이동</a>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="reservations-table">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>시간</th>
+                                <th>이름</th>
+                                <th>연락처</th>
+                                <th>서비스</th>
+                                <th>상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentReservationsTable">
+                            <tr>
+                                <td colspan="6" class="text-center">데이터를 불러오는 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 예약 목록 섹션 -->
+        <div id="reservations-section" class="section" style="display: none;">
+            <div class="reservations-section">
+                <div class="section-header">
+                    <h2>예약 목록 관리</h2>
+                    <div class="filter-controls">
+                        <select id="statusFilter">
+                            <option value="">전체 상태</option>
+                            <option value="pending">대기 중</option>
+                            <option value="confirmed">확정</option>
+                            <option value="cancelled">취소</option>
+                        </select>
+                        <input type="date" id="dateFilter" placeholder="날짜 선택">
+                        <button class="refresh-btn" onclick="loadReservations()">
+                            <span id="refreshText">새로고침</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 빈 상태 메시지 (예약 목록) -->
+                <div id="reservationsEmptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">📝</div>
+                        <h3>예약이 없습니다</h3>
+                        <p>아직 등록된 예약이 없습니다.<br>고객들의 예약을 기다려보세요!</p>
+                        <a href="index.html" class="empty-state-btn">예약 페이지로 이동</a>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="reservations-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>예약일</th>
+                                <th>시간</th>
+                                <th>고객명</th>
+                                <th>연락처</th>
+                                <th>이메일</th>
+                                <th>서비스</th>
+                                <th>상태</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTable">
+                            <tr>
+                                <td colspan="9" class="text-center">데이터를 불러오는 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상품 등록 섹션 -->
+        <div id="products-section" class="section" style="display: none;">
+            <div class="product-registration-section">
+                <div class="section-header">
+                    <h2>상품 등록</h2>
+                </div>
+                
+                <div class="product-form-container">
+                    <form id="productForm" class="product-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product_name">상품명 *</label>
+                                <input type="text" id="product_name" name="product_name" required 
+                                       placeholder="상품명을 입력하세요">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product_code">상품번호 *</label>
+                                <input type="text" id="product_code" name="product_code" required 
+                                       placeholder="예: P001, PROD-001">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product_date">날짜 *</label>
+                                <input type="date" id="product_date" name="product_date" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="product_price">가격 *</label>
+                                <input type="number" id="product_price" name="product_price" required 
+                                       placeholder="0" min="0" step="1000">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="start_time">시작 시간 *</label>
+                                <input type="time" id="start_time" name="start_time" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="end_time">종료 시간 *</label>
+                                <input type="time" id="end_time" name="end_time" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product_description">상품 설명</label>
+                            <textarea id="product_description" name="product_description" rows="4" 
+                                      placeholder="상품에 대한 상세 설명을 입력하세요"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="reset" class="action-btn cancel">초기화</button>
+                            <button type="submit" class="action-btn confirm">
+                                <span class="btn-text">상품 등록</span>
+                                <span class="btn-loader" style="display: none;">등록 중...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 등록된 상품 목록 -->
+                <div class="registered-products">
+                    <div class="section-header">
+                        <h3>등록된 상품 목록</h3>
+                        <button class="refresh-btn" onclick="loadProducts()">
+                            <span id="productRefreshText">새로고침</span>
+                        </button>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="reservations-table">
+                            <thead>
+                                <tr>
+                                    <th>상품번호</th>
+                                    <th>상품명</th>
+                                    <th>날짜</th>
+                                    <th>시간</th>
+                                    <th>가격</th>
+                                    <th>등록일</th>
+                                    <th>액션</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">등록된 상품이 없습니다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 예약현황 섹션 -->
+        <div id="bookings-section" class="section" style="display: none;">
+            <div class="bookings-section">
+                <div class="section-header">
+                    <h2>예약현황 관리</h2>
+                    <div class="filter-controls">
+                        <select id="bookingStatusFilter">
+                            <option value="">전체 상태</option>
+                            <option value="confirmed">확정</option>
+                            <option value="pending">대기 중</option>
+                            <option value="cancelled">취소</option>
+                            <option value="completed">완료</option>
+                        </select>
+                        <input type="date" id="bookingDateFilter" placeholder="날짜 선택">
+                        <input type="text" id="customerSearchFilter" placeholder="고객명 검색">
+                        <button class="refresh-btn" onclick="loadBookings()">
+                            <span id="bookingRefreshText">새로고침</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 예약현황 통계 -->
+                <div class="booking-stats">
+                    <div class="stats-grid" style="margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <h3 id="totalBookings">0</h3>
+                            <p>전체 예약현황</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="confirmedBookings">0</h3>
+                            <p>확정 예약</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="pendingBookings">0</h3>
+                            <p>대기 중</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="todayBookings">0</h3>
+                            <p>오늘 예약</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 빈 상태 메시지 (예약현황) -->
+                <div id="bookingsEmptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">🎯</div>
+                        <h3>예약현황이 없습니다</h3>
+                        <p>아직 등록된 예약현황이 없습니다.<br>고객들의 예약을 기다려보세요!</p>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="reservations-table">
+                        <thead>
+                            <tr>
+                                <th>예약ID</th>
+                                <th>고객명</th>
+                                <th>연락처</th>
+                                <th>예약일</th>
+                                <th>예약시간</th>
+                                <th>상품명</th>
+                                <th>인원수</th>
+                                <th>총 금액</th>
+                                <th>상태</th>
+                                <th>예약일시</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTable">
+                            <tr>
+                                <td colspan="11" class="text-center">데이터를 불러오는 중...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 예약 상세 모달 -->
+    <div id="reservationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>예약 상세 정보</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- 예약 상세 정보가 여기에 표시됩니다 -->
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="action-btn cancel" onclick="closeModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상태 변경 확인 모달 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>상태 변경 확인</h3>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div id="confirmMessage">
+                <!-- 확인 메시지가 여기에 표시됩니다 -->
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button class="action-btn cancel" onclick="closeConfirmModal()">취소</button>
+                <button class="action-btn confirm" id="confirmButton">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 메시지 -->
+    <div id="adminMessageContainer" class="message-container" style="display: none;">
+        <div id="adminMessageContent" class="message"></div>
+        <button id="closeAdminMessage" class="close-btn">×</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    <script src="admin-functions.js"></script>
+    <script>
+        // 관리자 페이지 전용 JavaScript
+        let currentReservationId = null;
+        let currentAction = null;
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+            loadRecentReservations();
+            setupAdminEventListeners();
+        });
+
+        // 관리자 페이지 이벤트 리스너 설정
+        function setupAdminEventListeners() {
+            // 필터 이벤트
+            document.getElementById('statusFilter').addEventListener('change', loadReservations);
+            document.getElementById('dateFilter').addEventListener('change', loadReservations);
+            
+            // 상품 등록 폼 이벤트
+            document.getElementById('productForm').addEventListener('submit', handleProductSubmit);
+            
+            // 예약현황 필터 이벤트
+            document.getElementById('bookingStatusFilter').addEventListener('change', loadBookings);
+            document.getElementById('bookingDateFilter').addEventListener('change', loadBookings);
+            document.getElementById('customerSearchFilter').addEventListener('input', debounce(loadBookings, 500));
+            
+            // 관리자 메시지 닫기
+            document.getElementById('closeAdminMessage').addEventListener('click', hideAdminMessage);
+            
+            // 모달 외부 클릭 시 닫기
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('reservationModal');
+                const confirmModal = document.getElementById('confirmModal');
+                if (event.target === modal) closeModal();
+                if (event.target === confirmModal) closeConfirmModal();
+            });
+        }
+
+        // 상품 등록 폼 제출 처리
+        async function handleProductSubmit(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoader = submitBtn.querySelector('.btn-loader');
+            
+            // 유효성 검사
+            if (!validateProductForm(form)) {
+                return;
+            }
+            
+            // 로딩 상태 시작
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline-flex';
+            
+            try {
+                // 상품번호 중복 체크
+                const productCode = formData.get('product_code').trim();
+                const duplicateCheck = await getProductByCode(productCode);
+                
+                if (duplicateCheck.success && duplicateCheck.data) {
+                    throw new Error('이미 존재하는 상품번호입니다.');
+                }
+                
+                // 시간 유효성 체크 (시작 시간 < 종료 시간)
+                const startTime = formData.get('start_time');
+                const endTime = formData.get('end_time');
+                
+                if (startTime >= endTime) {
+                    throw new Error('종료 시간은 시작 시간보다 늦어야 합니다.');
+                }
+                
+                // 폼 데이터를 객체로 변환
+                const productData = {
+                    product_name: formData.get('product_name').trim(),
+                    product_code: productCode,
+                    product_date: formData.get('product_date'),
+                    start_time: startTime,
+                    end_time: endTime,
+                    price: parseInt(formData.get('product_price')),
+                    description: formData.get('product_description')?.trim() || null
+                };
+                
+                // Supabase에 상품 저장
+                const result = await createProduct(productData);
+                
+                if (result.success) {
+                    showAdminMessage('상품이 성공적으로 등록되었습니다!', 'success');
+                    form.reset();
+                    loadProducts(); // 상품 목록 새로고침
+                } else {
+                    throw new Error(result.error || '상품 등록 중 오류가 발생했습니다.');
+                }
+                
+            } catch (error) {
+                console.error('상품 등록 오류:', error);
+                showAdminMessage(error.message || '상품 등록 중 오류가 발생했습니다.', 'error');
+            } finally {
+                // 로딩 상태 종료
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+            }
+        }
+
+        // 상품 폼 유효성 검사
+        function validateProductForm(form) {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('input[required]');
+            
+            // 필수 필드 체크
+            requiredFields.forEach(field => {
+                const value = field.value.trim();
+                if (!value) {
+                    showFieldError(field, '이 필드는 필수입니다.');
+                    isValid = false;
+                } else {
+                    clearFieldError(field);
+                }
+            });
+            
+            // 가격 유효성 체크
+            const priceField = form.querySelector('#product_price');
+            const price = parseInt(priceField.value);
+            if (price < 0) {
+                showFieldError(priceField, '가격은 0 이상이어야 합니다.');
+                isValid = false;
+            }
+            
+            // 상품번호 형식 체크 (영문, 숫자, 하이픈만 허용)
+            const codeField = form.querySelector('#product_code');
+            const codePattern = /^[A-Za-z0-9-]+$/;
+            if (!codePattern.test(codeField.value.trim())) {
+                showFieldError(codeField, '상품번호는 영문, 숫자, 하이픈만 사용할 수 있습니다.');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // 상품 목록 로드
+        async function loadProducts() {
+            const refreshBtn = document.getElementById('productRefreshText');
+            refreshBtn.innerHTML = '<span class="loading-spinner"></span>';
+            
+            try {
+                const result = await getProducts();
+                if (result.success && result.data) {
+                    displayProducts(result.data);
+                } else {
+                    throw new Error(result.error || '상품 목록을 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('상품 목록 로드 오류:', error);
+                showAdminMessage('상품 목록을 불러오는 중 오류가 발생했습니다.', 'error');
+            } finally {
+                refreshBtn.textContent = '새로고침';
+            }
+        }
+
+        // 상품 목록 표시
+        function displayProducts(products) {
+            const tbody = document.getElementById('productsTable');
+            
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">등록된 상품이 없습니다.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = products.map(product => `
+                <tr>
+                    <td>${product.product_code}</td>
+                    <td>${product.product_name}</td>
+                    <td>${formatDate(product.product_date)}</td>
+                    <td class="time-range">${formatTime(product.start_time)} - ${formatTime(product.end_time)}</td>
+                    <td class="price-display">${product.price.toLocaleString()}</td>
+                    <td>${formatDateTime(product.created_at)}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="editProduct('${product.id}')" 
+                                    style="background: #4facfe; color: white;">수정</button>
+                            <button class="action-btn delete" onclick="deleteProductConfirm('${product.id}')">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 상품 수정 (향후 구현)
+        function editProduct(productId) {
+            showAdminMessage('상품 수정 기능 준비 중입니다.', 'info');
+        }
+
+        // 상품 삭제 확인
+        function deleteProductConfirm(productId) {
+            currentReservationId = productId; // 기존 변수 재사용
+            currentAction = 'deleteProduct';
+            
+            document.getElementById('confirmMessage').innerHTML = `
+                <p style="color: #dc3545;"><strong>주의:</strong> 이 상품을 완전히 <strong>삭제</strong>하시겠습니까?</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">삭제된 데이터는 복구할 수 없습니다.</p>
+            `;
+            
+            document.getElementById('confirmButton').onclick = executeProductDelete;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // 상품 삭제 실행
+        async function executeProductDelete() {
+            try {
+                const result = await deleteProduct(currentReservationId);
+                
+                if (result.success) {
+                    showAdminMessage('상품이 삭제되었습니다.', 'success');
+                    loadProducts();
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('상품 삭제 오류:', error);
+                showAdminMessage('상품 삭제 중 오류가 발생했습니다.', 'error');
+            } finally {
+                closeConfirmModal();
+            }
+        }
+
+        // ===============================
+        // 예약현황 관련 함수들
+        // ===============================
+
+        // 예약현황 목록 로드
+        async function loadBookings() {
+            const refreshBtn = document.getElementById('bookingRefreshText');
+            refreshBtn.innerHTML = '<span class="loading-spinner"></span>';
+            
+            try {
+                const result = await getBookings();
+                if (result.success && result.data) {
+                    let filteredData = result.data;
+                    
+                    // 필터 적용
+                    const statusFilter = document.getElementById('bookingStatusFilter').value;
+                    const dateFilter = document.getElementById('bookingDateFilter').value;
+                    const customerFilter = document.getElementById('customerSearchFilter').value.trim();
+                    
+                    if (statusFilter) {
+                        filteredData = filteredData.filter(booking => booking.status === statusFilter);
+                    }
+                    
+                    if (dateFilter) {
+                        filteredData = filteredData.filter(booking => booking.booking_date === dateFilter);
+                    }
+                    
+                    if (customerFilter) {
+                        filteredData = filteredData.filter(booking => 
+                            booking.customer_name && booking.customer_name.toLowerCase().includes(customerFilter.toLowerCase())
+                        );
+                    }
+                    
+                    displayBookings(filteredData);
+                    updateBookingStats(result.data); // 전체 데이터로 통계 업데이트
+                } else {
+                    throw new Error(result.error || '예약현황을 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('예약현황 로드 오류:', error);
+                let errorMessage = '예약현황을 불러오는 중 오류가 발생했습니다.';
+                
+                // 특정 오류 메시지 처리
+                if (error.message && error.message.includes('relation "bookings" does not exist')) {
+                    errorMessage = 'bookings 테이블이 존재하지 않습니다. 데이터베이스 스키마를 먼저 실행해주세요.';
+                } else if (error.message && error.message.includes('permission denied')) {
+                    errorMessage = 'bookings 테이블에 접근 권한이 없습니다. RLS 정책을 확인해주세요.';
+                } else if (error.message) {
+                    errorMessage = `오류: ${error.message}`;
+                }
+                
+                showAdminMessage(errorMessage, 'error');
+                
+                // 테이블이 없을 경우 빈 상태로 표시
+                const tbody = document.getElementById('bookingsTable');
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center" style="color: #dc3545;">데이터베이스 테이블을 확인해주세요.</td></tr>';
+            } finally {
+                refreshBtn.textContent = '새로고침';
+            }
+        }
+
+        // 예약현황 목록 표시
+        function displayBookings(bookings) {
+            const tbody = document.getElementById('bookingsTable');
+            
+            if (!bookings || bookings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center">예약현황이 없습니다.</td></tr>';
+                toggleEmptyState('bookings', true);
+                return;
+            }
+            
+            toggleEmptyState('bookings', false);
+            
+            tbody.innerHTML = bookings.map(booking => `
+                <tr onclick="showBookingDetails('${booking.id || ''}')" style="cursor: pointer;">
+                    <td>${booking.id ? booking.id.substring(0, 8) + '...' : '-'}</td>
+                    <td>${booking.customer_name || '-'}</td>
+                    <td>${booking.customer_phone || '-'}</td>
+                    <td>${booking.booking_date ? formatDate(booking.booking_date) : '-'}</td>
+                    <td>${booking.booking_time ? formatTime(booking.booking_time) : '-'}</td>
+                    <td>${booking.product_name || '-'}</td>
+                    <td>${booking.guest_count || 1}명</td>
+                    <td class="price-display">${booking.total_amount ? booking.total_amount.toLocaleString() : '-'}</td>
+                    <td><span class="status-badge ${booking.status || 'pending'}">${getBookingStatusText(booking.status || 'pending')}</span></td>
+                    <td>${booking.created_at ? formatDateTime(booking.created_at) : '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="event.stopPropagation(); showBookingDetails('${booking.id || ''}')" 
+                                    style="background: #4facfe; color: white;">상세</button>
+                            ${booking.status === 'pending' ? 
+                                `<button class="action-btn confirm" onclick="event.stopPropagation(); confirmBooking('${booking.id || ''}')">확정</button>` : ''}
+                            ${booking.status !== 'cancelled' ? 
+                                `<button class="action-btn cancel" onclick="event.stopPropagation(); cancelBooking('${booking.id || ''}')">취소</button>` : ''}
+                            <button class="action-btn delete" onclick="event.stopPropagation(); deleteBookingConfirm('${booking.id || ''}')">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 예약현황 통계 업데이트
+        function updateBookingStats(bookings) {
+            if (!bookings) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            const total = bookings.length;
+            const confirmed = bookings.filter(b => b.status === 'confirmed').length;
+            const pending = bookings.filter(b => b.status === 'pending').length;
+            const todayCount = bookings.filter(b => b.booking_date === today).length;
+            
+            document.getElementById('totalBookings').textContent = total;
+            document.getElementById('confirmedBookings').textContent = confirmed;
+            document.getElementById('pendingBookings').textContent = pending;
+            document.getElementById('todayBookings').textContent = todayCount;
+        }
+
+        // 예약현황 상세 정보 표시
+        async function showBookingDetails(bookingId) {
+            try {
+                const result = await getBookingById(bookingId);
+                if (result.success && result.data) {
+                    const booking = result.data;
+                    const modalBody = document.getElementById('modalBody');
+                    
+                    modalBody.innerHTML = `
+                        <div style="line-height: 1.8;">
+                            <p><strong>예약 ID:</strong> ${booking.id}</p>
+                            <p><strong>고객명:</strong> ${booking.customer_name}</p>
+                            <p><strong>연락처:</strong> ${booking.customer_phone}</p>
+                            <p><strong>이메일:</strong> ${booking.customer_email || '-'}</p>
+                            <p><strong>예약일:</strong> ${formatDate(booking.booking_date)} (${getDayOfWeek(booking.booking_date)})</p>
+                            <p><strong>예약시간:</strong> ${formatTime(booking.booking_time)}</p>
+                            <p><strong>상품명:</strong> ${booking.product_name || '-'}</p>
+                            <p><strong>인원수:</strong> ${booking.guest_count || 1}명</p>
+                            <p><strong>총 금액:</strong> <span class="price-display">${booking.total_amount ? booking.total_amount.toLocaleString() : '-'}</span></p>
+                            <p><strong>상태:</strong> <span class="status-badge ${booking.status}">${getBookingStatusText(booking.status)}</span></p>
+                            <p><strong>특별 요청:</strong></p>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap;">
+                                ${booking.special_requests || '특별 요청사항이 없습니다.'}
+                            </div>
+                            <p style="margin-top: 15px;"><strong>예약일시:</strong> ${formatDateTime(booking.created_at)}</p>
+                            ${booking.updated_at && booking.updated_at !== booking.created_at ? 
+                                `<p><strong>수정일시:</strong> ${formatDateTime(booking.updated_at)}</p>` : ''}
+                        </div>
+                    `;
+                    
+                    document.getElementById('reservationModal').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('예약현황 상세 정보 로드 오류:', error);
+                showAdminMessage('예약현황 정보를 불러오는 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 예약현황 확정
+        function confirmBooking(bookingId) {
+            currentReservationId = bookingId;
+            currentAction = 'confirmBooking';
+            
+            document.getElementById('confirmMessage').innerHTML = `
+                <p>이 예약을 <strong>확정</strong>하시겠습니까?</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">확정된 예약은 고객에게 알림이 발송됩니다.</p>
+            `;
+            
+            document.getElementById('confirmButton').onclick = executeBookingAction;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // 예약현황 취소
+        function cancelBooking(bookingId) {
+            currentReservationId = bookingId;
+            currentAction = 'cancelBooking';
+            
+            document.getElementById('confirmMessage').innerHTML = `
+                <p>이 예약을 <strong>취소</strong>하시겠습니까?</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">취소된 예약은 복구할 수 있습니다.</p>
+            `;
+            
+            document.getElementById('confirmButton').onclick = executeBookingAction;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // 예약현황 삭제 확인
+        function deleteBookingConfirm(bookingId) {
+            currentReservationId = bookingId;
+            currentAction = 'deleteBooking';
+            
+            document.getElementById('confirmMessage').innerHTML = `
+                <p style="color: #dc3545;"><strong>주의:</strong> 이 예약현황을 완전히 <strong>삭제</strong>하시겠습니까?</p>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 10px;">삭제된 데이터는 복구할 수 없습니다.</p>
+            `;
+            
+            document.getElementById('confirmButton').onclick = executeBookingAction;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // 예약현황 액션 실행
+        async function executeBookingAction() {
+            try {
+                let result;
+                let message;
+                
+                switch (currentAction) {
+                    case 'confirmBooking':
+                        result = await updateBooking(currentReservationId, { status: 'confirmed' });
+                        message = '예약이 확정되었습니다.';
+                        break;
+                    case 'cancelBooking':
+                        result = await updateBooking(currentReservationId, { status: 'cancelled' });
+                        message = '예약이 취소되었습니다.';
+                        break;
+                    case 'deleteBooking':
+                        result = await deleteBooking(currentReservationId);
+                        message = '예약현황이 삭제되었습니다.';
+                        break;
+                }
+                
+                if (result.success) {
+                    showAdminMessage(message, 'success');
+                    loadBookings();
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                console.error('예약현황 액션 실행 오류:', error);
+                showAdminMessage('작업 중 오류가 발생했습니다.', 'error');
+            } finally {
+                closeConfirmModal();
+            }
+        }
+
+        // 예약현황 상태 텍스트 변환
+        function getBookingStatusText(status) {
+            const statusMap = {
+                'pending': '대기 중',
+                'confirmed': '확정',
+                'cancelled': '취소',
+                'completed': '완료'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 디바운스 함수 (검색 최적화용)
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 빈 상태 토글 함수
+        function toggleEmptyState(sectionType, isEmpty) {
+            let emptyStateId, tableId;
+            
+            switch(sectionType) {
+                case 'dashboard':
+                    emptyStateId = 'dashboardEmptyState';
+                    tableId = 'recentReservationsTable';
+                    break;
+                case 'reservations':
+                    emptyStateId = 'reservationsEmptyState';
+                    tableId = 'reservationsTable';
+                    break;
+                case 'bookings':
+                    emptyStateId = 'bookingsEmptyState';
+                    tableId = 'bookingsTable';
+                    break;
+                default:
+                    return;
+            }
+            
+            const emptyState = document.getElementById(emptyStateId);
+            const table = document.getElementById(tableId);
+            
+            if (isEmpty) {
+                if (emptyState) emptyState.style.display = 'block';
+                if (table && table.closest('.table-container')) {
+                    table.closest('.table-container').style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.style.display = 'none';
+                if (table && table.closest('.table-container')) {
+                    table.closest('.table-container').style.display = 'block';
+                }
+            }
+        }
+
+        // 섹션 표시/숨김
+        function showSection(sectionName) {
+            // 모든 섹션 숨기기
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // 모든 네비게이션 버튼에서 active 클래스 제거
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 선택된 섹션 표시
+            document.getElementById(sectionName + '-section').style.display = 'block';
+            
+            // 해당 버튼에 active 클래스 추가
+            event.target.classList.add('active');
+            
+            // 섹션별 데이터 로드
+            if (sectionName === 'reservations') {
+                loadReservations();
+            } else if (sectionName === 'bookings') {
+                loadBookings();
+            }
+        }
+
+        // 대시보드 통계 로드
+        async function loadDashboardStats() {
+            try {
+                const result = await getReservations();
+                if (result.success && result.data) {
+                    const reservations = result.data;
+                    const today = new Date().toISOString().split('T')[0];
+                    
+                    // 통계 계산
+                    const total = reservations.length;
+                    const todayCount = reservations.filter(r => r.reservation_date === today).length;
+                    const pending = reservations.filter(r => r.status === 'pending').length;
+                    const confirmed = reservations.filter(r => r.status === 'confirmed').length;
+                    
+                    // DOM 업데이트
+                    document.getElementById('totalReservations').textContent = total;
+                    document.getElementById('todayReservations').textContent = todayCount;
+                    document.getElementById('pendingReservations').textContent = pending;
+                    document.getElementById('confirmedReservations').textContent = confirmed;
+                    
+                    // 빈 데이터 상태 표시/숨김
+                    toggleEmptyState('dashboard', total === 0);
+                } else {
+                    // 데이터 로드 실패 시 0으로 초기화
+                    document.getElementById('totalReservations').textContent = '0';
+                    document.getElementById('todayReservations').textContent = '0';
+                    document.getElementById('pendingReservations').textContent = '0';
+                    document.getElementById('confirmedReservations').textContent = '0';
+                    toggleEmptyState('dashboard', true);
+                }
+            } catch (error) {
+                console.error('통계 로드 오류:', error);
+                // 오류 발생 시 0으로 표시하고 빈 상태 메시지 표시
+                document.getElementById('totalReservations').textContent = '0';
+                document.getElementById('todayReservations').textContent = '0';
+                document.getElementById('pendingReservations').textContent = '0';
+                document.getElementById('confirmedReservations').textContent = '0';
+                toggleEmptyState('dashboard', true);
+            }
+        }
+
+        // 최근 예약 로드 (대시보드용)
+        async function loadRecentReservations() {
+            try {
+                const result = await getReservations();
+                if (result.success && result.data) {
+                    const recent = result.data.slice(0, 5); // 최근 5개만
+                    displayRecentReservations(recent);
+                } else {
+                    // 데이터 로드 실패 시 빈 상태 표시
+                    displayRecentReservations([]);
+                }
+            } catch (error) {
+                console.error('최근 예약 로드 오류:', error);
+                // 오류 발생 시 빈 상태 표시
+                displayRecentReservations([]);
+            }
+        }
+
+        // 예약 목록 로드 (관리 페이지용)
+        async function loadReservations() {
+            const refreshBtn = document.getElementById('refreshText');
+            refreshBtn.innerHTML = '<span class="loading-spinner"></span>';
+            
+            try {
+                const result = await getReservations();
+                if (result.success && result.data) {
+                    let filteredData = result.data;
+                    
+                    // 필터 적용
+                    const statusFilter = document.getElementById('statusFilter').value;
+                    const dateFilter = document.getElementById('dateFilter').value;
+                    
+                    if (statusFilter) {
+                        filteredData = filteredData.filter(r => r.status === statusFilter);
+                    }
+                    
+                    if (dateFilter) {
+                        filteredData = filteredData.filter(r => r.reservation_date === dateFilter);
+                    }
+                    
+                    displayReservations(filteredData);
+                    loadDashboardStats(); // 통계도 함께 업데이트
+                } else {
+                    // 데이터 로드 실패 시 빈 상태 표시
+                    displayReservations([]);
+                }
+            } catch (error) {
+                console.error('예약 목록 로드 오류:', error);
+                showAdminMessage('예약 목록을 불러오는 중 오류가 발생했습니다.', 'error');
+                // 오류 발생 시 빈 상태 표시
+                displayReservations([]);
+            } finally {
+                refreshBtn.textContent = '새로고침';
+            }
+        }
+
+        // 관리자 메시지 표시
+        function showAdminMessage(text, type = 'success') {
+            const messageContainer = document.getElementById('adminMessageContainer');
+            const messageContent = document.getElementById('adminMessageContent');
+            
+            messageContent.textContent = text;
+            messageContent.className = `message ${type}`;
+            messageContainer.style.display = 'block';
+            
+            setTimeout(() => hideAdminMessage(), 5000);
+        }
+
+        // 관리자 메시지 숨기기
+        function hideAdminMessage() {
+            document.getElementById('adminMessageContainer').style.display = 'none';
+        }
+
+        // 기타 관리자 페이지 함수들은 다음 스크립트 파일에서 계속...
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약신청 - 오소마케팅</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>예약신청</h1>
+            <p>간편하게 예약을 신청하세요</p>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <a href="admin.html" class="nav-btn" style="font-size: 0.9rem; padding: 8px 16px;">관리자</a>
+            </div>
+        </header>
+
+        <main>
+            <!-- 예약 폼 -->
+            <div class="form-container">
+                <form id="reservationForm" class="reservation-form">
+                    <div class="form-group">
+                        <label for="name">성함 *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">연락처 *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="010-1234-5678">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">이메일</label>
+                        <input type="email" id="email" name="email" placeholder="example@email.com">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reservation_date">예약날짜 *</label>
+                            <input type="date" id="reservation_date" name="reservation_date" required style="display: none;">
+                            <div class="custom-date-picker">
+                                <button type="button" class="date-picker-btn" id="datePickerBtn">
+                                    <span id="selectedDateText">날짜를 선택하세요</span>
+                                    <span class="date-picker-icon">📅</span>
+                                </button>
+                                <div class="calendar-popup" id="calendarPopup" style="display: none;">
+                                    <div class="calendar-header">
+                                        <button type="button" class="calendar-nav" id="prevMonth">&lt;</button>
+                                        <h3 class="calendar-title" id="calendarTitle"></h3>
+                                        <button type="button" class="calendar-nav" id="nextMonth">&gt;</button>
+                                    </div>
+                                    <div class="calendar-weekdays">
+                                        <div class="weekday">일</div>
+                                        <div class="weekday">월</div>
+                                        <div class="weekday">화</div>
+                                        <div class="weekday">수</div>
+                                        <div class="weekday">목</div>
+                                        <div class="weekday">금</div>
+                                        <div class="weekday">토</div>
+                                    </div>
+                                    <div class="calendar-days" id="calendarDays">
+                                        <!-- 날짜들이 JavaScript로 동적 생성됩니다 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reservation_time">예약시간 *</label>
+                            <input type="time" id="reservation_time" name="reservation_time" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="service_type">서비스 종류</label>
+                        <select id="service_type" name="service_type">
+                            <option value="">선택해주세요</option>
+                            <option value="마케팅 상담">마케팅 상담</option>
+                            <option value="브랜딩 상담">브랜딩 상담</option>
+                            <option value="광고 운영 상담">광고 운영 상담</option>
+                            <option value="웹사이트 제작">웹사이트 제작</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">요청사항</label>
+                        <textarea id="message" name="message" rows="4" placeholder="상담받고 싶은 내용이나 특별한 요청사항을 적어주세요."></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-text">예약신청하기</span>
+                        <span class="btn-loader" style="display: none;">처리 중...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- 성공/에러 메시지 -->
+            <div id="messageContainer" class="message-container" style="display: none;">
+                <div id="messageContent" class="message"></div>
+                <button id="closeMessage" class="close-btn">×</button>
+            </div>
+
+            <!-- 예약 현황 (선택사항) -->
+            <div class="status-container">
+                <h3>예약 현황</h3>
+                <div id="reservationStatus" class="status-info">
+                    <p>예약 완료 후 확인 메시지를 보내드립니다.</p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 오소마케팅. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="calendar.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
