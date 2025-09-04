@@ -1,0 +1,26 @@
+{
+  "name": "2.develope",
+  "version": "1.0.0",
+  "description": "간편한 예약 신청 및 관리 시스템입니다.",
+  "main": "supabase-config.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "install-browsers": "playwright install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dami-Shin-01/Osocampingbbq.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dami-Shin-01/Osocampingbbq/issues"
+  },
+  "homepage": "https://github.com/Dami-Shin-01/Osocampingbbq#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

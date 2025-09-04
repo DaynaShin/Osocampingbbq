@@ -29,6 +29,15 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Dependencies
+node_modules/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
 # 데이터베이스 스키마 파일 (배포에 불필요)
 database-schema.sql
 .vercel
+env.js
