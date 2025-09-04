@@ -31,3 +31,4 @@ Thumbs.db
 
 # 데이터베이스 스키마 파일 (배포에 불필요)
 database-schema.sql
+.vercel

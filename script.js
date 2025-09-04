@@ -344,7 +344,8 @@ async function selectProduct(productId, productName) {
             customer_email: customerInfo.email || null,
             booking_date: product.product_date,
             booking_time: product.start_time,
-            product_name: product.product_name,
+            product_name: product.display_name || product.product_name,
+            product_code: product.product_code,
             guest_count: customerInfo.guestCount || 1,
             total_amount: product.price,
             status: 'confirmed',
@@ -384,7 +385,7 @@ function showBookingConfirmDialog(product) {
     return new Promise((resolve) => {
         const confirmed = confirm(
             `다음 상품을 예약하시겠습니까?\n\n` +
-            `상품명: ${product.product_name}\n` +
+            `상품명: ${product.display_name || product.product_name}\n` +
             `날짜: ${product.product_date}\n` +
             `시간: ${formatTimeRange(product.start_time, product.end_time)}\n` +
             `가격: ₩${product.price.toLocaleString()}\n` +
@@ -441,7 +442,7 @@ function showBookingCompletionInfo(product, customerInfo) {
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">상품명:</span>
-                        <span class="detail-value">${product.product_name}</span>
+                        <span class="detail-value">${product.display_name || product.product_name}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">예약날짜:</span>

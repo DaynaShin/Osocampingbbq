@@ -305,12 +305,12 @@ class CustomCalendar {
                         ${this.formatTimeRange(product.start_time, product.end_time)}
                     </div>
                     <div class="product-info">
-                        <h4>${product.product_name}</h4>
+                        <h4>${product.display_name || product.product_name}</h4>
                         <p class="product-description">${product.description || '상품 설명이 없습니다.'}</p>
                         <div class="product-price">₩${product.price.toLocaleString()}</div>
                     </div>
                     <div class="product-actions">
-                        <button class="select-product-btn" onclick="selectProduct('${product.id}', '${product.product_name}')">
+                        <button class="select-product-btn" onclick="selectProduct('${product.id}', '${product.display_name || product.product_name}')">
                             선택하기
                         </button>
                     </div>

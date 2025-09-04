@@ -144,13 +144,21 @@
                     <form id="productForm" class="product-form">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="product_name">상품명 *</label>
+                                <label for="product_name">관리용 상품명 *</label>
                                 <input type="text" id="product_name" name="product_name" required 
-                                       placeholder="상품명을 입력하세요">
+                                       placeholder="관리용 상품명을 입력하세요">
                             </div>
                             
                             <div class="form-group">
-                                <label for="product_code">상품번호 *</label>
+                                <label for="display_name">고객용 표시명 *</label>
+                                <input type="text" id="display_name" name="display_name" required 
+                                       placeholder="고객에게 보여질 상품명을 입력하세요">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product_code">상품코드 *</label>
                                 <input type="text" id="product_code" name="product_code" required 
                                        placeholder="예: P001, PROD-001">
                             </div>
@@ -431,6 +439,7 @@
                 // 폼 데이터를 객체로 변환
                 const productData = {
                     product_name: formData.get('product_name').trim(),
+                    display_name: formData.get('display_name').trim(),
                     product_code: productCode,
                     product_date: formData.get('product_date'),
                     start_time: startTime,
@@ -528,7 +537,7 @@
             tbody.innerHTML = products.map(product => `
                 <tr>
                     <td>${product.product_code}</td>
-                    <td>${product.product_name}</td>
+                    <td title="관리용: ${product.product_name}">${product.display_name || product.product_name}</td>
                     <td>${formatDate(product.product_date)}</td>
                     <td class="time-range">${formatTime(product.start_time)} - ${formatTime(product.end_time)}</td>
                     <td class="price-display">${product.price.toLocaleString()}</td>
