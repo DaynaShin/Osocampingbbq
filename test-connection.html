@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 연결 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        button { margin: 5px; padding: 10px 20px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Supabase 데이터베이스 연결 테스트</h1>
+    
+    <div id="status"></div>
+    
+    <button onclick="testConnection()">연결 테스트</button>
+    <button onclick="testReservations()">예약 데이터 조회</button>
+    <button onclick="testProducts()">상품 데이터 조회</button>
+    <button onclick="testBookings()">예약현황 데이터 조회</button>
+    <button onclick="clearResults()">결과 지우기</button>
+
+    <div id="results"></div>
+
+    <script src="supabase-config.js"></script>
+    <script>
+        function addResult(title, data, isSuccess = true) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function updateStatus(message, isSuccess = true) {
+            const status = document.getElementById('status');
+            status.className = `result ${isSuccess ? 'success' : 'error'}`;
+            status.innerHTML = `<strong>상태:</strong> ${message}`;
+        }
+
+        async function testConnection() {
+            try {
+                updateStatus('연결 테스트 중...');
+                
+                if (!window.__ENV) {
+                    throw new Error('환경 변수가 로드되지 않았습니다.');
+                }
+                
+                const { createClient } = supabase;
+                const client = createClient(window.__ENV.SUPABASE_URL, window.__ENV.SUPABASE_ANON_KEY);
+                
+                // 간단한 쿼리로 연결 테스트
+                const { data, error } = await client.from('reservations').select('count(*)', { count: 'exact', head: true });
+                
+                if (error) throw error;
+                
+                updateStatus('✅ Supabase 연결 성공!');
+                addResult('연결 테스트', {
+                    url: window.__ENV.SUPABASE_URL,
+                    status: 'Connected',
+                    timestamp: new Date().toISOString()
+                });
+                
+            } catch (error) {
+                updateStatus('❌ 연결 실패: ' + error.message, false);
+                addResult('연결 에러', { error: error.message }, false);
+            }
+        }
+
+        async function testReservations() {
+            try {
+                const result = await getReservations();
+                addResult('예약 데이터', {
+                    success: result.success,
+                    count: result.data ? result.data.length : 0,
+                    data: result.data || result.error
+                }, result.success);
+            } catch (error) {
+                addResult('예약 데이터 조회 실패', { error: error.message }, false);
+            }
+        }
+
+        async function testProducts() {
+            try {
+                const result = await getProducts();
+                addResult('상품 데이터', {
+                    success: result.success,
+                    count: result.data ? result.data.length : 0,
+                    data: result.data || result.error
+                }, result.success);
+            } catch (error) {
+                addResult('상품 데이터 조회 실패', { error: error.message }, false);
+            }
+        }
+
+        async function testBookings() {
+            try {
+                const result = await getBookings();
+                addResult('예약현황 데이터', {
+                    success: result.success,
+                    count: result.data ? result.data.length : 0,
+                    data: result.data || result.error
+                }, result.success);
+            } catch (error) {
+                addResult('예약현황 데이터 조회 실패', { error: error.message }, false);
+            }
+        }
+
+        // 페이지 로드시 자동 연결 테스트
+        window.addEventListener('load', () => {
+            setTimeout(testConnection, 500);
+        });
+    </script>
+</body>
+</html>

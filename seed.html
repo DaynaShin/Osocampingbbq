@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seed Data - 오소마케팅</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background:#f5f6fa; }
+    .seed-card { max-width: 720px; margin: 24px auto; background:#fff; border-radius:12px; padding:20px; box-shadow: 0 8px 20px rgba(0,0,0,.05);} 
+    .seed-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .log { margin-top:14px; padding:12px; background:#0f172a; color:#e2e8f0; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; max-height:260px; overflow:auto; }
+    .seed-btn { background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:10px 14px; cursor:pointer; }
+    .seed-btn.secondary { background:#0ea5e9; }
+    .seed-btn.danger { background:#ef4444; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="env.js"></script>
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+  <div class="seed-card">
+    <h2 style="margin-bottom:10px;">가상 데이터 생성 도구</h2>
+    <p style="color:#555; margin-bottom:16px;">테스트용 상품/예약/예약현황 데이터를 손쉽게 주입하거나 초기화합니다.</p>
+    <div class="seed-actions">
+      <button class="seed-btn" onclick="seedProducts()">가상 상품 생성 (다음 5일)</button>
+      <button class="seed-btn secondary" onclick="seedReservationsAndBookings()">가상 예약/예약현황 생성</button>
+      <button class="seed-btn danger" onclick="wipeAll()">초기화(모든 데이터 삭제)</button>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    const logBox = document.getElementById('log');
+    const log = (msg) => { logBox.innerText += `\n${new Date().toLocaleTimeString()} | ${msg}`; logBox.scrollTop = logBox.scrollHeight; };
+
+    function fmtDate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    async function seedProducts() {
+      if (!confirm('샘플 상품을 생성하시겠습니까?')) return;
+      try {
+        const base = new Date();
+        const slots = [
+          { start: '10:00', end: '11:00', price: 50000, label: '오전 10시 슬롯' },
+          { start: '14:00', end: '15:30', price: 80000, label: '오후 2시 슬롯' },
+          { start: '16:00', end: '17:00', price: 60000, label: '오후 4시 슬롯' },
+        ];
+        let count = 0;
+        for (let d = 0; d < 5; d++) {
+          const day = new Date(base.getFullYear(), base.getMonth(), base.getDate() + d);
+          const dateStr = fmtDate(day);
+          for (let i = 0; i < slots.length; i++) {
+            const s = slots[i];
+            const code = ['A','B','C'][i];
+            const req = {
+              product_name: '상담 슬롯',
+              display_name: `오소 상담 ${dateStr} ${s.label}`,
+              product_code: `P${dateStr.replaceAll('-','')}${code}`,
+              product_date: dateStr,
+              start_time: s.start,
+              end_time: s.end,
+              price: s.price,
+              description: `${s.label} (${s.start}~${s.end})`,
+              status: 'active',
+              is_booked: (['A','C'].includes(code) && (d === 1 || d === 3))
+            };
+            const res = await createProduct(req);
+            if (!res.success) throw new Error(res.error);
+            count++;
+          }
+        }
+        log(`상품 ${count}건 생성 완료`);
+      } catch (err) {
+        console.error(err);
+        log(`[오류] 상품 생성 실패: ${err.message}`);
+      }
+    }
+
+    async function seedReservationsAndBookings() {
+      if (!confirm('샘플 예약/예약현황을 생성하시겠습니까?')) return;
+      try {
+        const today = new Date();
+        const d1 = fmtDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
+        const d2 = fmtDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2));
+        const d3 = fmtDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3));
+
+        const reservations = [
+          { name: '김민수', phone: '010-1111-2222', email: 'ms.kim@example.com', reservation_date: d1, reservation_time: '10:00', service_type: '마케팅 상담', message: '채널 운영 초기 전략 상담 요청', status: 'pending' },
+          { name: '이서연', phone: '010-3333-4444', email: 'sy.lee@example.com', reservation_date: d1, reservation_time: '14:00', service_type: '브랜딩 상담', message: '네이밍/톤앤매너 자문', status: 'confirmed' },
+          { name: '박지훈', phone: '010-5555-6666', email: 'jh.park@example.com', reservation_date: d2, reservation_time: '16:00', service_type: '광고 운영 상담', message: '퍼포먼스 최적화 문의', status: 'pending' },
+          { name: '최유진', phone: '010-7777-8888', email: 'yj.choi@example.com', reservation_date: d3, reservation_time: '10:00', service_type: '웹사이트 제작', message: '견적 요청', status: 'cancelled' },
+        ];
+        let rc = 0;
+        for (const r of reservations) {
+          const res = await createReservation(r);
+          if (!res.success) throw new Error(res.error);
+          rc++;
+        }
+        log(`예약 ${rc}건 생성 완료`);
+
+        // Bookings: pick a few active products to create bookings
+        const nextDayProducts = await getAvailableProductsByDate(d1);
+        if (!nextDayProducts.success) throw new Error(nextDayProducts.error);
+        let bc = 0;
+        for (const p of (nextDayProducts.data || []).slice(0, 2)) {
+          const booking = {
+            customer_name: '홍길동',
+            customer_phone: '010-9999-0000',
+            customer_email: 'gildong@example.com',
+            booking_date: p.product_date,
+            booking_time: p.start_time,
+            product_name: p.display_name || p.product_name,
+            product_code: p.product_code,
+            guest_count: 1,
+            total_amount: p.price,
+            status: 'confirmed',
+            special_requests: '샘플 예약 데이터'
+          };
+          const resB = await createBooking(booking);
+          if (!resB.success) throw new Error(resB.error);
+          await bookProduct(p.id);
+          bc++;
+        }
+        log(`예약현황 ${bc}건 생성 및 상품 상태 업데이트 완료`);
+      } catch (err) {
+        console.error(err);
+        log(`[오류] 예약/예약현황 생성 실패: ${err.message}`);
+      }
+    }
+
+    async function wipeAll() {
+      if (!confirm('모든 데이터를 삭제하시겠습니까? (reservations/products/bookings)')) return;
+      try {
+        // 개발 정책 기준으로 동작(anon 권한 필요). 운영 보안 정책에서는 실패할 수 있음.
+        const delB = await supabaseClient.from('bookings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (delB.error) throw delB.error;
+        const delR = await supabaseClient.from('reservations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (delR.error) throw delR.error;
+        const delP = await supabaseClient.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        if (delP.error) throw delP.error;
+        log('모든 데이터 삭제 완료');
+      } catch (err) {
+        console.error(err);
+        log(`[오류] 삭제 실패: ${err.message}`);
+      }
+    }
+  </script>
+</body>
+</html>
+

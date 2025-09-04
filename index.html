@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>예약신청 - 오소마케팅</title>
+    <!-- orig: <title>?�약?�청 - ?�소마�???/title> -->
+    <title>예약 신청 - 오소마케팅</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <style>
+        .nav-btn { text-decoration: none; background: rgba(255,255,255,0.2); color: #fff; padding: 8px 14px; border-radius: 6px; }
+    </style>
+    
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>예약신청</h1>
-            <p>간편하게 예약을 신청하세요</p>
+            <!-- orig: <h1>?�약?�청</h1> -->
+            <h1>OSO Camping BBQ 예약</h1>
+            <p>프라이빗룸, 소파테이블, 텐트동 등 다양한 공간을 예약하세요.</p>
             <div style="position: absolute; top: 20px; right: 20px;">
                 <a href="admin.html" class="nav-btn" style="font-size: 0.9rem; padding: 8px 16px;">관리자</a>
             </div>
@@ -22,26 +29,31 @@
             <div class="form-container">
                 <form id="reservationForm" class="reservation-form">
                     <div class="form-group">
-                        <label for="name">성함 *</label>
+                        <!-- orig: ?�함 -->
+                        <label for="name">이름 *</label>
                         <input type="text" id="name" name="name" required>
                     </div>
 
                     <div class="form-group">
+                        <!-- orig: ?�락�? -->
                         <label for="phone">연락처 *</label>
                         <input type="tel" id="phone" name="phone" required placeholder="010-1234-5678">
                     </div>
 
                     <div class="form-group">
+                        <!-- orig: ?�메?? -->
                         <label for="email">이메일</label>
                         <input type="email" id="email" name="email" placeholder="example@email.com">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="reservation_date">예약날짜 *</label>
+                            <!-- orig: ?�약?�짜 -->
+                            <label for="reservation_date">예약 날짜 *</label>
                             <input type="date" id="reservation_date" name="reservation_date" required style="display: none;">
                             <div class="custom-date-picker">
                                 <button type="button" class="date-picker-btn" id="datePickerBtn">
+                                    <!-- orig: ?�짜�??�택?�세?? -->
                                     <span id="selectedDateText">날짜를 선택하세요</span>
                                     <span class="date-picker-icon">📅</span>
                                 </button>
@@ -52,6 +64,7 @@
                                         <button type="button" class="calendar-nav" id="nextMonth">&gt;</button>
                                     </div>
                                     <div class="calendar-weekdays">
+                                        <!-- orig weekdays were broken -->
                                         <div class="weekday">일</div>
                                         <div class="weekday">월</div>
                                         <div class="weekday">화</div>
@@ -61,65 +74,86 @@
                                         <div class="weekday">토</div>
                                     </div>
                                     <div class="calendar-days" id="calendarDays">
-                                        <!-- 날짜들이 JavaScript로 동적 생성됩니다 -->
+                                        <!-- dates filled by JavaScript -->
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="reservation_time">예약시간 *</label>
-                            <input type="time" id="reservation_time" name="reservation_time" required>
+                            <label for="guest_count">인원 수 *</label>
+                            <select id="guest_count" name="guest_count" required>
+                                <option value="">인원을 선택하세요</option>
+                                <option value="1">1명</option>
+                                <option value="2">2명</option>
+                                <option value="3">3명</option>
+                                <option value="4">4명</option>
+                                <option value="5">5명</option>
+                                <option value="6">6명</option>
+                                <option value="7">7명</option>
+                                <option value="8">8명</option>
+                                <option value="9">9명</option>
+                                <option value="10">10명</option>
+                                <option value="11">11명</option>
+                                <option value="12">12명 이상</option>
+                            </select>
                         </div>
                     </div>
 
+                    <!-- 장소 및 시간 선택 영역 -->
+                    <div class="venue-selection" id="venueSelection" style="display: none;">
+                        <h3 style="margin: 20px 0 15px 0; color: #333; font-size: 1.2rem;">장소 및 시간 선택</h3>
+                        <div class="venue-grid" id="venueGrid">
+                            <!-- JavaScript로 동적 생성 -->
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label for="service_type">서비스 종류</label>
-                        <select id="service_type" name="service_type">
-                            <option value="">선택해주세요</option>
-                            <option value="마케팅 상담">마케팅 상담</option>
-                            <option value="브랜딩 상담">브랜딩 상담</option>
-                            <option value="광고 운영 상담">광고 운영 상담</option>
-                            <option value="웹사이트 제작">웹사이트 제작</option>
-                            <option value="기타">기타</option>
-                        </select>
+                        <label for="special_requests">특별 요청사항</label>
+                        <textarea id="special_requests" name="special_requests" rows="4" placeholder="특별히 요청하실 사항이 있으시면 적어주세요. (예: 생일 케이크 준비, 음향 장비 필요 등)"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="message">요청사항</label>
-                        <textarea id="message" name="message" rows="4" placeholder="상담받고 싶은 내용이나 특별한 요청사항을 적어주세요."></textarea>
+                    <!-- 선택된 장소 정보 표시 -->
+                    <div class="selected-venue-info" id="selectedVenueInfo" style="display: none;">
+                        <h4 style="color: #4facfe; margin-bottom: 10px;">선택된 예약 정보</h4>
+                        <div class="venue-info-content" id="venueInfoContent">
+                            <!-- JavaScript로 동적 생성 -->
+                        </div>
                     </div>
 
                     <button type="submit" class="submit-btn" id="submitBtn">
-                        <span class="btn-text">예약신청하기</span>
+                        <!-- orig: ?�약?�청?�기 -->
+                        <span class="btn-text">예약 신청하기</span>
+                        <!-- orig: 처리 �?.. -->
                         <span class="btn-loader" style="display: none;">처리 중...</span>
                     </button>
                 </form>
             </div>
 
-            <!-- 성공/에러 메시지 -->
+            <!-- 성공/오류 메시지 -->
             <div id="messageContainer" class="message-container" style="display: none;">
                 <div id="messageContent" class="message"></div>
-                <button id="closeMessage" class="close-btn">×</button>
+                <button id="closeMessage" class="close-btn" aria-label="close">×</button>
             </div>
 
             <!-- 예약 현황 (선택사항) -->
             <div class="status-container">
+                <!-- orig: ?�약 ?�황 -->
                 <h3>예약 현황</h3>
                 <div id="reservationStatus" class="status-info">
-                    <p>예약 완료 후 확인 메시지를 보내드립니다.</p>
+                    <!-- orig sentence broken -->
+                    <p>예약 완료 시 확인 메시지를 보내드립니다.</p>
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>&copy; 2025 오소마케팅. All rights reserved.</p>
+            <!-- orig: &copy; 2025 ?�소마�??? All rights reserved. -->
+            <p>&copy; 2025 OSO Camping BBQ All rights reserved.</p>
         </footer>
     </div>
 
     <!-- Scripts -->
-    <script src="supabase-config.js"></script>
-    <script src="calendar.js"></script>
-    <script src="script.js"></script>
+    <script src="supabase-config-v2.js"></script>
+    <script src="oso-reservation.js"></script>
 </body>
 </html>

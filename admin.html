@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- orig: <title>관리자 ?�이지 - ?�소마�???/title> -->
-  <title>관리자 페이지 - 오소마케팅</title>
+  <title>관리자 페이지 - OSO Camping BBQ</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="env.js"></script>
@@ -13,36 +13,40 @@
   <!-- 관리자 헤더 -->
   <header class="admin-header" style="padding:20px 24px; background:#fff; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e9ecef;">
     <!-- orig: <h1>?�약 관�??�스??/h1> -->
-    <h1 style="font-size:1.4rem; font-weight:600;">예약 관리 대시보드</h1>
+    <h1 style="font-size:1.4rem; font-weight:600;">OSO Camping BBQ 관리자</h1>
     <nav class="admin-nav" style="display:flex; gap:8px;">
       <a href="index.html" class="nav-btn">고객 페이지</a>
       <button class="nav-btn active" onclick="showSection('dashboard')">대시보드</button>
-      <button class="nav-btn" onclick="showSection('reservations')">예약 목록</button>
-      <button class="nav-btn" onclick="showSection('products')">상품 등록</button>
-      <button class="nav-btn" onclick="showSection('product-list')">상품 목록</button>
+      <button class="nav-btn" onclick="showSection('reservations')">예약 신청</button>
       <button class="nav-btn" onclick="showSection('bookings')">예약 현황</button>
+      <button class="nav-btn" onclick="showSection('catalog')">시설 관리</button>
+      <button class="nav-btn" onclick="showSection('availability')">가용성 관리</button>
     </nav>
   </header>
 
   <main class="admin-main" style="padding:20px; max-width:1100px; margin:0 auto;">
     <!-- 대시보드 섹션 -->
     <div id="dashboard-section" class="section active">
-      <div class="stats-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+      <div class="stats-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px;">
         <div class="stat-card" style="background:#fff; border-radius:10px; padding:16px; text-align:center;">
-          <h3 id="totalReservations" style="font-size:2rem;">0</h3>
-          <p>전체 예약</p>
+          <h3 id="totalReservations" style="font-size:2rem; color:#4facfe;">0</h3>
+          <p>전체 예약 신청</p>
         </div>
         <div class="stat-card" style="background:#fff; border-radius:10px; padding:16px; text-align:center;">
-          <h3 id="todayReservations" style="font-size:2rem;">0</h3>
+          <h3 id="todayReservations" style="font-size:2rem; color:#28a745;">0</h3>
           <p>오늘 예약</p>
         </div>
         <div class="stat-card" style="background:#fff; border-radius:10px; padding:16px; text-align:center;">
-          <h3 id="pendingReservations" style="font-size:2rem;">0</h3>
-          <p>대기</p>
+          <h3 id="pendingReservations" style="font-size:2rem; color:#ffc107;">0</h3>
+          <p>대기 중</p>
         </div>
         <div class="stat-card" style="background:#fff; border-radius:10px; padding:16px; text-align:center;">
-          <h3 id="confirmedReservations" style="font-size:2rem;">0</h3>
-          <p>확정</p>
+          <h3 id="confirmedBookings" style="font-size:2rem; color:#17a2b8;">0</h3>
+          <p>확정 예약</p>
+        </div>
+        <div class="stat-card" style="background:#fff; border-radius:10px; padding:16px; text-align:center;">
+          <h3 id="availableSlots" style="font-size:2rem; color:#6f42c1;">78</h3>
+          <p>총 슬롯 수</p>
         </div>
       </div>
 
@@ -63,15 +67,16 @@
             <thead>
               <tr>
                 <th>날짜</th>
+                <th>장소</th>
                 <th>시간</th>
                 <th>이름</th>
                 <th>연락처</th>
-                <th>서비스</th>
+                <th>인원</th>
                 <th>상태</th>
               </tr>
             </thead>
             <tbody id="recentReservationsTable">
-              <tr><td colspan="6" class="text-center">데이터를 불러오는 중...</td></tr>
+              <tr><td colspan="7" class="text-center">데이터를 불러오는 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -82,13 +87,21 @@
     <div id="reservations-section" class="section" style="display:none;">
       <div class="reservations-section" style="background:#fff; border-radius:10px; padding:16px;">
         <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
-          <h2>예약 목록 관리</h2>
+          <h2>예약 신청 관리</h2>
           <div class="filter-controls" style="display:flex; gap:8px;">
             <select id="statusFilter">
               <option value="">전체 상태</option>
-              <option value="pending">대기</option>
-              <option value="confirmed">확정</option>
-              <option value="cancelled">취소</option>
+              <option value="pending">신청 대기</option>
+              <option value="confirmed">승인 완료</option>
+              <option value="cancelled">신청 취소</option>
+            </select>
+            <select id="categoryFilter">
+              <option value="">전체 장소</option>
+              <option value="PR">프라이빗룸</option>
+              <option value="ST">소파테이블</option>
+              <option value="TN">텐트동</option>
+              <option value="VP">VIP동</option>
+              <option value="YT">야장테이블</option>
             </select>
             <input type="date" id="dateFilter" placeholder="날짜 선택" />
             <button class="refresh-btn" onclick="loadReservations()"><span id="refreshText">새로고침</span></button>
@@ -109,17 +122,18 @@
               <tr>
                 <th>ID</th>
                 <th>날짜</th>
+                <th>장소</th>
                 <th>시간</th>
                 <th>이름</th>
                 <th>연락처</th>
                 <th>이메일</th>
-                <th>서비스</th>
+                <th>인원</th>
                 <th>상태</th>
                 <th>액션</th>
               </tr>
             </thead>
             <tbody id="reservationsTable">
-              <tr><td colspan="9" class="text-center">데이터를 불러오는 중...</td></tr>
+              <tr><td colspan="10" class="text-center">데이터를 불러오는 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -280,7 +294,7 @@
                 <th>연락처</th>
                 <th>예약일</th>
                 <th>예약시간</th>
-                <th>상품명</th>
+                <th>장소</th>
                 <th>인원수</th>
                 <th>총금액</th>
                 <th>상태</th>
@@ -292,6 +306,115 @@
               <tr><td colspan="11" class="text-center">데이터를 불러오는 중...</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- OSO 시설 관리 섹션 -->
+    <div id="catalog-section" class="section" style="display:none;">
+      <div class="catalog-section" style="background:#fff; border-radius:10px; padding:16px;">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>시설 관리</h2>
+          <button class="refresh-btn" onclick="loadCatalog()"><span id="catalogRefreshText">새로고침</span></button>
+        </div>
+
+        <!-- 카테고리별 시설 현황 -->
+        <div class="catalog-stats" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom:20px;">
+          <div class="stat-card" style="background:#e8f5e8; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#28a745; margin:0;">프라이빗룸</h4>
+            <p id="prCount" style="font-size:1.5rem; margin:5px 0 0 0;">0</p>
+          </div>
+          <div class="stat-card" style="background:#fff3cd; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#856404; margin:0;">소파테이블</h4>
+            <p id="stCount" style="font-size:1.5rem; margin:5px 0 0 0;">0</p>
+          </div>
+          <div class="stat-card" style="background:#d4edda; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#155724; margin:0;">텐트동</h4>
+            <p id="tnCount" style="font-size:1.5rem; margin:5px 0 0 0;">0</p>
+          </div>
+          <div class="stat-card" style="background:#cce5ff; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#0066cc; margin:0;">VIP동</h4>
+            <p id="vpCount" style="font-size:1.5rem; margin:5px 0 0 0;">0</p>
+          </div>
+          <div class="stat-card" style="background:#f8d7da; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#721c24; margin:0;">야장테이블</h4>
+            <p id="ytCount" style="font-size:1.5rem; margin:5px 0 0 0;">0</p>
+          </div>
+        </div>
+
+        <!-- 시설 목록 -->
+        <div class="table-container">
+          <table class="reservations-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th>시설코드</th>
+                <th>카테고리</th>
+                <th>시설명</th>
+                <th>최대인원</th>
+                <th>기본가격</th>
+                <th>설명</th>
+                <th>상태</th>
+                <th>액션</th>
+              </tr>
+            </thead>
+            <tbody id="catalogTable">
+              <tr><td colspan="8" class="text-center">데이터를 불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- OSO 가용성 관리 섹션 -->
+    <div id="availability-section" class="section" style="display:none;">
+      <div class="availability-section" style="background:#fff; border-radius:10px; padding:16px;">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>가용성 관리</h2>
+          <div class="filter-controls" style="display:flex; gap:8px;">
+            <input type="date" id="availabilityDateFilter" />
+            <select id="availabilityCategoryFilter">
+              <option value="">전체 카테고리</option>
+              <option value="PR">프라이빗룸</option>
+              <option value="ST">소파테이블</option>
+              <option value="TN">텐트동</option>
+              <option value="VP">VIP동</option>
+              <option value="YT">야장테이블</option>
+            </select>
+            <button class="refresh-btn" onclick="loadAvailability()"><span id="availabilityRefreshText">새로고침</span></button>
+          </div>
+        </div>
+
+        <!-- 시간별 가용성 그리드 -->
+        <div class="availability-grid" style="margin-bottom:20px;">
+          <div class="time-slots" style="display:flex; gap:10px; margin-bottom:15px;">
+            <div class="time-slot-header">시설</div>
+            <div class="time-slot-header">점심 (11:30-14:30)</div>
+            <div class="time-slot-header">오후 (15:00-18:00)</div>
+            <div class="time-slot-header">저녁 (18:30-21:30)</div>
+          </div>
+          <div id="availabilityGridContent">
+            <div class="text-center" style="padding:20px; color:#666;">날짜를 선택하여 가용성을 확인하세요</div>
+          </div>
+        </div>
+
+        <!-- 예약 통계 -->
+        <div class="booking-stats" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+          <div class="stat-card" style="background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#4facfe; margin:0 0 5px 0;">총 슬롯</h4>
+            <p id="totalSlots" style="font-size:1.2rem; margin:0;">78</p>
+          </div>
+          <div class="stat-card" style="background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#28a745; margin:0 0 5px 0;">예약가능</h4>
+            <p id="availableSlots" style="font-size:1.2rem; margin:0;">-</p>
+          </div>
+          <div class="stat-card" style="background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#ffc107; margin:0 0 5px 0;">예약됨</h4>
+            <p id="bookedSlots" style="font-size:1.2rem; margin:0;">-</p>
+          </div>
+          <div class="stat-card" style="background:#fff; border:1px solid #e9ecef; border-radius:8px; padding:12px; text-align:center;">
+            <h4 style="color:#dc3545; margin:0 0 5px 0;">비활성</h4>
+            <p id="inactiveSlots" style="font-size:1.2rem; margin:0;">-</p>
+          </div>
         </div>
       </div>
     </div>
@@ -333,9 +456,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="supabase-config.js"></script>
-  <script src="script.js"></script>
-  <script src="admin-functions.js"></script>
+  <script src="supabase-config-v2.js"></script>
   <script>
     let currentReservationId = null;
     let currentAction = null;
@@ -351,24 +472,22 @@
     function setupAdminEventListeners() {
       const statusFilter = document.getElementById('statusFilter');
       const dateFilter = document.getElementById('dateFilter');
-      const productForm = document.getElementById('productForm');
+      const categoryFilter = document.getElementById('categoryFilter');
       const bookingStatusFilter = document.getElementById('bookingStatusFilter');
       const bookingDateFilter = document.getElementById('bookingDateFilter');
       const customerSearchFilter = document.getElementById('customerSearchFilter');
-      const productStatusFilter = document.getElementById('productStatusFilter');
-      const productDateFilter = document.getElementById('productDateFilter');
-      const productSearchFilter = document.getElementById('productSearchFilter');
+      const availabilityDateFilter = document.getElementById('availabilityDateFilter');
+      const availabilityCategoryFilter = document.getElementById('availabilityCategoryFilter');
       const closeAdminMessage = document.getElementById('closeAdminMessage');
 
       if (statusFilter) statusFilter.addEventListener('change', loadReservations);
       if (dateFilter) dateFilter.addEventListener('change', loadReservations);
-      if (productForm) productForm.addEventListener('submit', handleProductSubmit);
+      if (categoryFilter) categoryFilter.addEventListener('change', loadReservations);
       if (bookingStatusFilter) bookingStatusFilter.addEventListener('change', loadBookings);
       if (bookingDateFilter) bookingDateFilter.addEventListener('change', loadBookings);
       if (customerSearchFilter) customerSearchFilter.addEventListener('input', debounce(loadBookings, 500));
-      if (productStatusFilter) productStatusFilter.addEventListener('change', loadProductList);
-      if (productDateFilter) productDateFilter.addEventListener('change', loadProductList);
-      if (productSearchFilter) productSearchFilter.addEventListener('input', debounce(loadProductList, 500));
+      if (availabilityDateFilter) availabilityDateFilter.addEventListener('change', loadAvailability);
+      if (availabilityCategoryFilter) availabilityCategoryFilter.addEventListener('change', loadAvailability);
       if (closeAdminMessage) closeAdminMessage.addEventListener('click', hideAdminMessage);
 
       window.addEventListener('click', function (event) {
@@ -385,12 +504,21 @@
       const target = document.getElementById(sectionName + '-section');
       if (target) target.style.display = 'block';
       const buttons = Array.from(document.querySelectorAll('.nav-btn'));
-      const btn = buttons.find((b) => b.textContent.includes(sectionName === 'dashboard' ? '대시보드' : sectionName === 'reservations' ? '예약 목록' : sectionName === 'products' ? '상품 등록' : sectionName === 'product-list' ? '상품 목록' : '예약현황'));
+      const sectionMap = {
+        'dashboard': '대시보드',
+        'reservations': '예약 신청',
+        'bookings': '예약 현황',
+        'catalog': '시설 관리',
+        'availability': '가용성 관리'
+      };
+      const btn = buttons.find((b) => b.textContent.includes(sectionMap[sectionName] || sectionName));
       if (btn) btn.classList.add('active');
+      
+      // Load section data
       if (sectionName === 'reservations') loadReservations();
       else if (sectionName === 'bookings') loadBookings();
-      else if (sectionName === 'products') loadProducts();
-      else if (sectionName === 'product-list') loadProductList();
+      else if (sectionName === 'catalog') loadCatalog();
+      else if (sectionName === 'availability') loadAvailability();
     }
 
     async function loadDashboardStats() {
@@ -402,17 +530,24 @@
           const total = reservations.length;
           const todayCount = reservations.filter((r) => r.reservation_date === today).length;
           const pending = reservations.filter((r) => r.status === 'pending').length;
-          const confirmed = reservations.filter((r) => r.status === 'confirmed').length;
+          
+          // Get bookings for confirmed count
+          const bookingsResult = await getBookings();
+          let confirmed = 0;
+          if (bookingsResult.success && bookingsResult.data) {
+            confirmed = bookingsResult.data.filter((b) => b.status === 'confirmed').length;
+          }
+          
           document.getElementById('totalReservations').textContent = total;
           document.getElementById('todayReservations').textContent = todayCount;
           document.getElementById('pendingReservations').textContent = pending;
-          document.getElementById('confirmedReservations').textContent = confirmed;
+          document.getElementById('confirmedBookings').textContent = confirmed;
           toggleEmptyState('dashboard', total === 0);
         } else {
           document.getElementById('totalReservations').textContent = '0';
           document.getElementById('todayReservations').textContent = '0';
           document.getElementById('pendingReservations').textContent = '0';
-          document.getElementById('confirmedReservations').textContent = '0';
+          document.getElementById('confirmedBookings').textContent = '0';
           toggleEmptyState('dashboard', true);
         }
       } catch (err) {
@@ -420,7 +555,7 @@
         document.getElementById('totalReservations').textContent = '0';
         document.getElementById('todayReservations').textContent = '0';
         document.getElementById('pendingReservations').textContent = '0';
-        document.getElementById('confirmedReservations').textContent = '0';
+        document.getElementById('confirmedBookings').textContent = '0';
         toggleEmptyState('dashboard', true);
       }
     }
@@ -447,10 +582,14 @@
         const result = await getReservations();
         if (result.success && result.data) {
           let data = result.data;
-          const status = document.getElementById('statusFilter').value;
-          const date = document.getElementById('dateFilter').value;
+          const status = document.getElementById('statusFilter')?.value;
+          const date = document.getElementById('dateFilter')?.value;
+          const category = document.getElementById('categoryFilter')?.value;
+          
           if (status) data = data.filter((r) => r.status === status);
           if (date) data = data.filter((r) => r.reservation_date === date);
+          if (category) data = data.filter((r) => r.category_code === category);
+          
           displayReservations(data);
           loadDashboardStats();
         } else {
@@ -702,7 +841,7 @@
           <td>${b.customer_phone}</td>
           <td>${b.booking_date}</td>
           <td>${b.booking_time}</td>
-          <td>${b.product_name}</td>
+          <td>${b.venue_name || b.resource_name || b.product_name || '-'}</td>
           <td>${b.guest_count || 1}</td>
           <td>₩${Number(b.total_amount || 0).toLocaleString()}</td>
           <td><span class="status-badge ${b.status}">${getBookingStatusText(b.status)}</span></td>
@@ -921,6 +1060,271 @@
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
       };
+    }
+
+    // Display functions
+    function displayRecentReservations(reservations) {
+      const tbody = document.getElementById('recentReservationsTable');
+      if (!tbody) return;
+      if (!reservations || reservations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">최근 예약이 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = reservations
+        .map((r) => `
+          <tr>
+            <td>${r.reservation_date}</td>
+            <td>${r.venue_name || r.product_name || '-'}</td>
+            <td>${r.time_slot || '-'}</td>
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.guest_count || 1}</td>
+            <td><span class="status-badge ${r.status}">${getStatusText(r.status)}</span></td>
+          </tr>`)
+        .join('');
+    }
+
+    function displayReservations(reservations) {
+      const tbody = document.getElementById('reservationsTable');
+      if (!tbody) return;
+      toggleEmptyState('reservations', !reservations || reservations.length === 0);
+      if (!reservations || reservations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center">예약이 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = reservations
+        .map((r) => `
+          <tr>
+            <td>${r.id?.substring(0, 8)}...</td>
+            <td>${r.reservation_date}</td>
+            <td>${r.venue_name || r.product_name || '-'}</td>
+            <td>${r.time_slot || '-'}</td>
+            <td>${r.name}</td>
+            <td>${r.phone}</td>
+            <td>${r.email || '-'}</td>
+            <td>${r.guest_count || 1}</td>
+            <td><span class="status-badge ${r.status}">${getStatusText(r.status)}</span></td>
+            <td>
+              <div class="action-buttons">
+                ${r.status === 'pending' ? `<button class="action-btn confirm" onclick="confirmReservation('${r.id}')">승인</button>` : ''}
+                ${r.status !== 'cancelled' ? `<button class="action-btn cancel" onclick="cancelReservation('${r.id}')">취소</button>` : ''}
+                <button class="action-btn delete" onclick="deleteReservationConfirm('${r.id}')">삭제</button>
+              </div>
+            </td>
+          </tr>`)
+        .join('');
+    }
+
+    function getStatusText(status) {
+      const map = { pending: '대기', confirmed: '승인', cancelled: '취소', completed: '완료' };
+      return map[status] || status;
+    }
+
+    function toggleEmptyState(section, isEmpty) {
+      const emptyState = document.getElementById(`${section}EmptyState`);
+      const table = document.querySelector(`#${section}-section .table-container`);
+      if (emptyState && table) {
+        emptyState.style.display = isEmpty ? 'block' : 'none';
+        table.style.display = isEmpty ? 'none' : 'block';
+      }
+    }
+
+    // OSO Catalog Management Functions
+    async function loadCatalog() {
+      const refreshBtn = document.getElementById('catalogRefreshText');
+      if (refreshBtn) refreshBtn.innerHTML = '<span class="loading-spinner"></span>';
+      try {
+        const result = await getResourceCatalog();
+        if (result.success && result.data) {
+          displayCatalogStats(result.data);
+          displayCatalog(result.data);
+        } else {
+          throw new Error(result.error || '시설 목록을 불러오지 못했습니다.');
+        }
+      } catch (err) {
+        console.error('시설 목록 로드 오류:', err);
+        showAdminMessage('시설 목록을 불러오는 중 오류가 발생했습니다.', 'error');
+        displayCatalog([]);
+      } finally {
+        if (refreshBtn) refreshBtn.textContent = '새로고침';
+      }
+    }
+
+    function displayCatalogStats(resources) {
+      const stats = resources.reduce((acc, r) => {
+        acc[r.category_code] = (acc[r.category_code] || 0) + 1;
+        return acc;
+      }, {});
+      
+      document.getElementById('prCount').textContent = stats.PR || 0;
+      document.getElementById('stCount').textContent = stats.ST || 0;
+      document.getElementById('tnCount').textContent = stats.TN || 0;
+      document.getElementById('vpCount').textContent = stats.VP || 0;
+      document.getElementById('ytCount').textContent = stats.YT || 0;
+    }
+
+    function displayCatalog(resources) {
+      const tbody = document.getElementById('catalogTable');
+      if (!tbody) return;
+      if (!resources || resources.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">시설이 없습니다.</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = resources
+        .map((r) => `
+          <tr>
+            <td><code>${r.internal_code}</code></td>
+            <td><span class="category-badge ${r.category_code.toLowerCase()}">${getCategoryName(r.category_code)}</span></td>
+            <td>${r.display_name}</td>
+            <td>${r.max_guests}명</td>
+            <td>₩${Number(r.price || 0).toLocaleString()}</td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;" title="${r.description || ''}">${r.description || '-'}</td>
+            <td><span class="status-badge ${r.active ? 'active' : 'inactive'}">${r.active ? '활성' : '비활성'}</span></td>
+            <td>
+              <div class="action-buttons">
+                <button class="action-btn edit" onclick="editResource('${r.internal_code}')">수정</button>
+                <button class="action-btn ${r.active ? 'inactive' : 'active'}" onclick="toggleResourceStatus('${r.internal_code}', ${!r.active})">${r.active ? '비활성' : '활성화'}</button>
+              </div>
+            </td>
+          </tr>`)
+        .join('');
+    }
+
+    function getCategoryName(code) {
+      const map = {
+        'PR': '프라이빗룸',
+        'ST': '소파테이블', 
+        'TN': '텐트동',
+        'VP': 'VIP동',
+        'YT': '야장테이블'
+      };
+      return map[code] || code;
+    }
+
+    function editResource(resourceCode) {
+      showAdminMessage('시설 수정 기능은 준비 중입니다.', 'info');
+    }
+
+    function toggleResourceStatus(resourceCode, newActive) {
+      showAdminMessage('시설 상태 변경 기능은 준비 중입니다.', 'info');
+    }
+
+    // OSO Availability Management Functions
+    async function loadAvailability() {
+      const refreshBtn = document.getElementById('availabilityRefreshText');
+      const dateFilter = document.getElementById('availabilityDateFilter');
+      
+      if (refreshBtn) refreshBtn.innerHTML = '<span class="loading-spinner"></span>';
+      
+      try {
+        const selectedDate = dateFilter?.value;
+        if (!selectedDate) {
+          document.getElementById('availabilityGridContent').innerHTML = 
+            '<div class="text-center" style="padding:20px; color:#666;">날짜를 선택하여 가용성을 확인하세요</div>';
+          return;
+        }
+
+        const result = await getAvailableSlots();
+        if (result.success && result.data) {
+          displayAvailabilityGrid(result.data, selectedDate);
+          updateAvailabilityStats(result.data);
+        } else {
+          throw new Error(result.error || '가용성 정보를 불러오지 못했습니다.');
+        }
+      } catch (err) {
+        console.error('가용성 로드 오류:', err);
+        showAdminMessage('가용성 정보를 불러오는 중 오류가 발생했습니다.', 'error');
+      } finally {
+        if (refreshBtn) refreshBtn.textContent = '새로고침';
+      }
+    }
+
+    function displayAvailabilityGrid(slots, selectedDate) {
+      const categoryFilter = document.getElementById('availabilityCategoryFilter').value;
+      let filteredSlots = slots;
+      
+      if (categoryFilter) {
+        filteredSlots = slots.filter(slot => slot.category_code === categoryFilter);
+      }
+      
+      // Group by resource
+      const resourceGroups = filteredSlots.reduce((acc, slot) => {
+        if (!acc[slot.resource_code]) {
+          acc[slot.resource_code] = {
+            name: slot.display_name,
+            category: slot.category_code,
+            slots: {}
+          };
+        }
+        acc[slot.resource_code].slots[slot.time_slot] = slot;
+        return acc;
+      }, {});
+      
+      const gridContent = Object.entries(resourceGroups)
+        .map(([resourceCode, resource]) => {
+          const timeSlots = ['lunch', 'afternoon', 'dinner'];
+          return `
+            <div class="availability-row" style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
+              <div class="resource-name" style="width:150px; font-weight:500;">
+                <span class="category-badge ${resource.category.toLowerCase()}" style="margin-right:5px;">${getCategoryName(resource.category)}</span>
+                ${resource.name}
+              </div>
+              ${timeSlots.map(timeSlot => {
+                const slot = resource.slots[timeSlot];
+                const isAvailable = slot && slot.active && !slot.is_booked;
+                return `
+                  <div class="time-slot-status ${isAvailable ? 'available' : 'unavailable'}" 
+                       style="flex:1; padding:8px; text-align:center; border-radius:4px; border:1px solid #ddd; 
+                              background:${isAvailable ? '#e8f5e8' : '#f8f9fa'}; color:${isAvailable ? '#155724' : '#6c757d'};">
+                    ${isAvailable ? '예약가능' : (slot?.is_booked ? '예약됨' : '비활성')}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }).join('');
+      
+      document.getElementById('availabilityGridContent').innerHTML = 
+        gridContent || '<div class="text-center" style="padding:20px; color:#666;">해당 조건에 맞는 시설이 없습니다.</div>';
+    }
+
+    function updateAvailabilityStats(slots) {
+      const total = slots.length;
+      const available = slots.filter(s => s.active && !s.is_booked).length;
+      const booked = slots.filter(s => s.is_booked).length;
+      const inactive = slots.filter(s => !s.active).length;
+      
+      document.getElementById('totalSlots').textContent = total;
+      document.getElementById('availableSlots').textContent = available;
+      document.getElementById('bookedSlots').textContent = booked;
+      document.getElementById('inactiveSlots').textContent = inactive;
+    }
+
+    // Utility functions
+    function showAdminMessage(message, type = 'info') {
+      const container = document.getElementById('adminMessageContainer');
+      const content = document.getElementById('adminMessageContent');
+      if (container && content) {
+        content.textContent = message;
+        container.className = `message-container show ${type}`;
+        container.style.display = 'block';
+        setTimeout(() => hideAdminMessage(), 5000);
+      }
+    }
+
+    function hideAdminMessage() {
+      const container = document.getElementById('adminMessageContainer');
+      if (container) {
+        container.style.display = 'none';
+        container.className = 'message-container';
+      }
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('ko-KR') + ' ' + date.toLocaleTimeString('ko-KR', {hour12: false});
     }
   </script>
 </body>
