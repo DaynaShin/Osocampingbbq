@@ -41,6 +41,7 @@
         <button class="nav-btn" onclick="showSection('bookings')">예약 현황</button>
         <button class="nav-btn" onclick="showSection('catalog')">시설 관리</button>
         <button class="nav-btn" onclick="showSection('availability')">가용성 관리</button>
+        <button class="nav-btn" onclick="showSection('modifications')">변경 요청</button>
         <button class="nav-btn" onclick="showSection('messages')">메시지 관리</button>
       </nav>
     </div>
@@ -533,7 +534,103 @@
       </div>
     </div>
 
+    <!-- 변경 요청 관리 섹션 -->
+    <div id="modifications-section" class="section" style="display:none;">
+      <div class="modifications-section" style="background:#fff; border-radius:10px; padding:16px;">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>예약 변경 요청 관리</h2>
+          <div class="modification-controls" style="display:flex; gap:8px;">
+            <select id="modificationStatusFilter">
+              <option value="">전체 상태</option>
+              <option value="pending">대기 중</option>
+              <option value="approved">승인됨</option>
+              <option value="rejected">거부됨</option>
+              <option value="completed">처리 완료</option>
+            </select>
+            <select id="modificationTypeFilter">
+              <option value="">전체 타입</option>
+              <option value="date">날짜 변경</option>
+              <option value="guests">인원 변경</option>
+              <option value="cancellation">예약 취소</option>
+            </select>
+            <button class="refresh-btn" onclick="loadModificationRequests()">새로고침</button>
+          </div>
+        </div>
+
+        <!-- 변경 요청 통계 -->
+        <div class="modification-stats" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin:16px 0;">
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="totalModifications" style="font-size:1.5rem; color:#4facfe; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">전체 요청</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="pendingModifications" style="font-size:1.5rem; color:#ffc107; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">대기 중</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="approvedModifications" style="font-size:1.5rem; color:#28a745; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">승인됨</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="rejectedModifications" style="font-size:1.5rem; color:#dc3545; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">거부됨</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="completedModifications" style="font-size:1.5rem; color:#17a2b8; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">처리 완료</p>
+          </div>
+        </div>
+
+        <!-- 변경 요청 테이블 -->
+        <div class="table-container" style="overflow-x:auto; margin-top:16px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8f9fa;">
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">요청 시간</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">예약번호</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">고객명</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">연락처</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">변경 타입</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">기존 정보</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">변경 요청</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">상태</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">액션</th>
+              </tr>
+            </thead>
+            <tbody id="modificationsTable">
+              <tr><td colspan="9" style="text-align:center; padding:16px;">데이터를 불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 빈 상태 메시지 -->
+        <div id="modificationsEmptyState" class="empty-state" style="display:none; padding:30px; text-align:center; color:#666;">
+          <div class="empty-state-icon" style="font-size:2rem;">📝</div>
+          <h3>변경 요청이 없습니다</h3>
+          <p>고객의 예약 변경 요청이 들어오면 여기에 표시됩니다.</p>
+        </div>
+      </div>
+    </div>
+
   </main>
+
+  <!-- 변경 요청 상세 모달 -->
+  <div id="modificationModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);">
+    <div class="modal-content" style="background:#fff; max-width:800px; margin:40px auto; border-radius:10px; padding:20px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3>변경 요청 상세</h3>
+        <button class="modal-close" onclick="closeModificationModal()" aria-label="close">&times;</button>
+      </div>
+      <div id="modificationModalBody">
+        <!-- 내용이 JavaScript로 동적 생성됩니다 -->
+      </div>
+      <div style="margin-top: 20px; text-align: right; display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="action-btn cancel" onclick="closeModificationModal()">닫기</button>
+        <button class="action-btn" id="approveModificationBtn" onclick="processModification('approved')">승인</button>
+        <button class="action-btn reject" id="rejectModificationBtn" onclick="processModification('rejected')">거부</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 예약 상세 모달 -->
   <div id="reservationModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);">
@@ -593,6 +690,8 @@
       const customerSearchFilter = document.getElementById('customerSearchFilter');
       const availabilityDateFilter = document.getElementById('availabilityDateFilter');
       const availabilityCategoryFilter = document.getElementById('availabilityCategoryFilter');
+      const modificationStatusFilter = document.getElementById('modificationStatusFilter');
+      const modificationTypeFilter = document.getElementById('modificationTypeFilter');
       const closeAdminMessage = document.getElementById('closeAdminMessage');
 
       if (statusFilter) statusFilter.addEventListener('change', loadReservations);
@@ -603,13 +702,17 @@
       if (customerSearchFilter) customerSearchFilter.addEventListener('input', debounce(loadBookings, 500));
       if (availabilityDateFilter) availabilityDateFilter.addEventListener('change', loadAvailability);
       if (availabilityCategoryFilter) availabilityCategoryFilter.addEventListener('change', loadAvailability);
+      if (modificationStatusFilter) modificationStatusFilter.addEventListener('change', loadModificationRequests);
+      if (modificationTypeFilter) modificationTypeFilter.addEventListener('change', loadModificationRequests);
       if (closeAdminMessage) closeAdminMessage.addEventListener('click', hideAdminMessage);
 
       window.addEventListener('click', function (event) {
         const modal = document.getElementById('reservationModal');
         const confirmModal = document.getElementById('confirmModal');
+        const modificationModal = document.getElementById('modificationModal');
         if (event.target === modal) closeModal();
         if (event.target === confirmModal) closeConfirmModal();
+        if (event.target === modificationModal) closeModificationModal();
       });
     }
 
@@ -624,7 +727,9 @@
         'reservations': '예약 신청',
         'bookings': '예약 현황',
         'catalog': '시설 관리',
-        'availability': '가용성 관리'
+        'availability': '가용성 관리',
+        'modifications': '변경 요청',
+        'messages': '메시지 관리'
       };
       const btn = buttons.find((b) => b.textContent.includes(sectionMap[sectionName] || sectionName));
       if (btn) btn.classList.add('active');
@@ -634,6 +739,8 @@
       else if (sectionName === 'bookings') loadBookings();
       else if (sectionName === 'catalog') loadCatalog();
       else if (sectionName === 'availability') loadAvailability();
+      else if (sectionName === 'modifications') loadModificationRequests();
+      else if (sectionName === 'messages') loadMessageLogs();
     }
 
     async function loadDashboardStats() {
@@ -1890,6 +1997,387 @@
         typeFilter.addEventListener('change', loadMessageLogs);
       }
     });
+
+    // ====================
+    // 변경 요청 관리 기능
+    // ====================
+
+    let currentModificationRequest = null;
+
+    // 변경 요청 목록 로드
+    async function loadModificationRequests() {
+      try {
+        const statusFilter = document.getElementById('modificationStatusFilter')?.value || '';
+        const typeFilter = document.getElementById('modificationTypeFilter')?.value || '';
+        
+        const result = await getModificationRequests({
+          status: statusFilter,
+          modification_type: typeFilter
+        });
+
+        if (result.success && result.data) {
+          displayModificationRequests(result.data);
+          updateModificationStats(result.data);
+        } else {
+          console.error('변경 요청 로드 실패:', result.error);
+          showEmptyModificationState();
+        }
+      } catch (error) {
+        console.error('변경 요청 로드 중 오류:', error);
+        showEmptyModificationState();
+      }
+    }
+
+    // 변경 요청 목록 표시
+    function displayModificationRequests(requests) {
+      const tbody = document.getElementById('modificationsTable');
+      const emptyState = document.getElementById('modificationsEmptyState');
+      
+      if (!requests || requests.length === 0) {
+        showEmptyModificationState();
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      
+      tbody.innerHTML = requests.map(request => {
+        const statusBadge = getModificationStatusBadge(request.status);
+        const typeBadge = getModificationTypeBadge(request.modification_type);
+        
+        return `
+          <tr>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              ${formatDateTime(request.created_at)}
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              <strong>${request.reservation_number}</strong>
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              ${request.customer_name}
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              ${request.customer_phone}
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              ${typeBadge}
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              <div class="original-info">
+                ${formatOriginalInfo(request)}
+              </div>
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              <div class="requested-info">
+                ${formatRequestedInfo(request)}
+              </div>
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              ${statusBadge}
+            </td>
+            <td style="padding:8px; border:1px solid #dee2e6;">
+              <button class="action-btn small" onclick="showModificationDetails('${request.id}')">
+                상세보기
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 변경 요청 통계 업데이트
+    function updateModificationStats(requests) {
+      const total = requests.length;
+      const pending = requests.filter(r => r.status === 'pending').length;
+      const approved = requests.filter(r => r.status === 'approved').length;
+      const rejected = requests.filter(r => r.status === 'rejected').length;
+      const completed = requests.filter(r => r.status === 'completed').length;
+
+      document.getElementById('totalModifications').textContent = total;
+      document.getElementById('pendingModifications').textContent = pending;
+      document.getElementById('approvedModifications').textContent = approved;
+      document.getElementById('rejectedModifications').textContent = rejected;
+      document.getElementById('completedModifications').textContent = completed;
+    }
+
+    // 빈 상태 표시
+    function showEmptyModificationState() {
+      const tbody = document.getElementById('modificationsTable');
+      const emptyState = document.getElementById('modificationsEmptyState');
+      
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px;">변경 요청이 없습니다.</td></tr>';
+      emptyState.style.display = 'block';
+    }
+
+    // 변경 요청 상세 모달 표시
+    async function showModificationDetails(modificationId) {
+      try {
+        const result = await getModificationRequestById(modificationId);
+        
+        if (result.success && result.data) {
+          currentModificationRequest = result.data;
+          displayModificationModal(result.data);
+        } else {
+          showAdminMessage('변경 요청 정보를 불러올 수 없습니다.', 'error');
+        }
+      } catch (error) {
+        console.error('변경 요청 상세 조회 중 오류:', error);
+        showAdminMessage('변경 요청 정보를 불러오는 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 변경 요청 모달 표시
+    function displayModificationModal(request) {
+      const modalBody = document.getElementById('modificationModalBody');
+      const approveBtn = document.getElementById('approveModificationBtn');
+      const rejectBtn = document.getElementById('rejectModificationBtn');
+
+      // 상태에 따라 버튼 표시/숨김
+      if (request.status !== 'pending') {
+        approveBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+      } else {
+        approveBtn.style.display = 'inline-block';
+        rejectBtn.style.display = 'inline-block';
+      }
+
+      modalBody.innerHTML = `
+        <div class="modification-details">
+          <div class="detail-section">
+            <h4>기본 정보</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <label>예약번호:</label>
+                <span>${request.reservation_number}</span>
+              </div>
+              <div class="detail-item">
+                <label>고객명:</label>
+                <span>${request.customer_name}</span>
+              </div>
+              <div class="detail-item">
+                <label>연락처:</label>
+                <span>${request.customer_phone}</span>
+              </div>
+              <div class="detail-item">
+                <label>요청 시간:</label>
+                <span>${formatDateTime(request.created_at)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>변경 요청 내용</h4>
+            <div class="modification-comparison">
+              <div class="before-after">
+                <div class="before">
+                  <h5>기존 정보</h5>
+                  ${formatDetailedOriginalInfo(request)}
+                </div>
+                <div class="after">
+                  <h5>변경 요청</h5>
+                  ${formatDetailedRequestedInfo(request)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${request.reason ? `
+            <div class="detail-section">
+              <h4>변경 사유</h4>
+              <p class="reason-text">${request.reason}</p>
+            </div>
+          ` : ''}
+
+          ${request.modification_type === 'cancellation' ? `
+            <div class="detail-section">
+              <h4>환불 정보</h4>
+              <div class="refund-details">
+                <div class="refund-item">
+                  <label>원래 금액:</label>
+                  <span>${formatPrice(request.original_data?.total_price || 0)}원</span>
+                </div>
+                <div class="refund-item">
+                  <label>환불율:</label>
+                  <span>${request.refund_rate || 0}%</span>
+                </div>
+                <div class="refund-item">
+                  <label>예상 환불 금액:</label>
+                  <span class="refund-amount">${formatPrice(request.refund_amount || 0)}원</span>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="detail-section">
+            <h4>처리 상태</h4>
+            <div class="status-info">
+              <span class="status-badge ${request.status}">${getStatusText(request.status)}</span>
+              ${request.processed_at ? `<span class="processed-time">처리 시간: ${formatDateTime(request.processed_at)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modificationModal').style.display = 'block';
+    }
+
+    // 변경 요청 처리 (승인/거부)
+    async function processModification(action) {
+      if (!currentModificationRequest) return;
+
+      const actionText = action === 'approved' ? '승인' : '거부';
+      
+      if (!confirm(`이 변경 요청을 ${actionText}하시겠습니까?`)) {
+        return;
+      }
+
+      try {
+        const result = await processModificationRequest(currentModificationRequest.id, action);
+
+        if (result.success) {
+          showAdminMessage(`변경 요청이 ${actionText}되었습니다.`, 'success');
+          closeModificationModal();
+          loadModificationRequests(); // 목록 새로고침
+        } else {
+          showAdminMessage(`변경 요청 ${actionText} 중 오류가 발생했습니다: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        console.error(`변경 요청 ${actionText} 중 오류:`, error);
+        showAdminMessage(`변경 요청 ${actionText} 중 오류가 발생했습니다.`, 'error');
+      }
+    }
+
+    // 변경 요청 모달 닫기
+    function closeModificationModal() {
+      document.getElementById('modificationModal').style.display = 'none';
+      currentModificationRequest = null;
+    }
+
+    // 유틸리티 함수들
+    function getModificationStatusBadge(status) {
+      const statusMap = {
+        'pending': { text: '대기 중', class: 'warning' },
+        'approved': { text: '승인됨', class: 'success' },
+        'rejected': { text: '거부됨', class: 'danger' },
+        'completed': { text: '처리 완료', class: 'info' }
+      };
+      
+      const statusInfo = statusMap[status] || { text: status, class: 'secondary' };
+      return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+    }
+
+    function getModificationTypeBadge(type) {
+      const typeMap = {
+        'date': { text: '날짜 변경', class: 'info' },
+        'guests': { text: '인원 변경', class: 'warning' },
+        'cancellation': { text: '예약 취소', class: 'danger' }
+      };
+      
+      const typeInfo = typeMap[type] || { text: type, class: 'secondary' };
+      return `<span class="type-badge ${typeInfo.class}">${typeInfo.text}</span>`;
+    }
+
+    function formatOriginalInfo(request) {
+      if (request.modification_type === 'date') {
+        return `${formatDate(request.original_data?.reservation_date)} ${request.original_data?.time_slot}`;
+      } else if (request.modification_type === 'guests') {
+        return `${request.original_data?.guest_count}명`;
+      } else if (request.modification_type === 'cancellation') {
+        return `${formatPrice(request.original_data?.total_price || 0)}원`;
+      }
+      return '-';
+    }
+
+    function formatRequestedInfo(request) {
+      if (request.modification_type === 'date') {
+        return `${formatDate(request.new_data?.reservation_date)} ${request.new_data?.time_slot}`;
+      } else if (request.modification_type === 'guests') {
+        return `${request.new_data?.guest_count}명`;
+      } else if (request.modification_type === 'cancellation') {
+        return `환불: ${formatPrice(request.refund_amount || 0)}원`;
+      }
+      return '-';
+    }
+
+    function formatDetailedOriginalInfo(request) {
+      if (request.modification_type === 'date') {
+        return `
+          <div class="info-item">
+            <label>예약일:</label>
+            <span>${formatDate(request.original_data?.reservation_date)}</span>
+          </div>
+          <div class="info-item">
+            <label>시간:</label>
+            <span>${request.original_data?.time_slot}</span>
+          </div>
+        `;
+      } else if (request.modification_type === 'guests') {
+        return `
+          <div class="info-item">
+            <label>인원:</label>
+            <span>${request.original_data?.guest_count}명</span>
+          </div>
+          <div class="info-item">
+            <label>총 금액:</label>
+            <span>${formatPrice(request.original_data?.total_price || 0)}원</span>
+          </div>
+        `;
+      } else if (request.modification_type === 'cancellation') {
+        return `
+          <div class="info-item">
+            <label>예약일:</label>
+            <span>${formatDate(request.original_data?.reservation_date)}</span>
+          </div>
+          <div class="info-item">
+            <label>결제 금액:</label>
+            <span>${formatPrice(request.original_data?.total_price || 0)}원</span>
+          </div>
+        `;
+      }
+      return '-';
+    }
+
+    function formatDetailedRequestedInfo(request) {
+      if (request.modification_type === 'date') {
+        return `
+          <div class="info-item">
+            <label>새 예약일:</label>
+            <span>${formatDate(request.new_data?.reservation_date)}</span>
+          </div>
+          <div class="info-item">
+            <label>새 시간:</label>
+            <span>${request.new_data?.time_slot}</span>
+          </div>
+        `;
+      } else if (request.modification_type === 'guests') {
+        const priceDiff = (request.new_data?.total_price || 0) - (request.original_data?.total_price || 0);
+        return `
+          <div class="info-item">
+            <label>새 인원:</label>
+            <span>${request.new_data?.guest_count}명</span>
+          </div>
+          <div class="info-item">
+            <label>새 금액:</label>
+            <span>${formatPrice(request.new_data?.total_price || 0)}원</span>
+          </div>
+          <div class="info-item">
+            <label>차액:</label>
+            <span class="${priceDiff >= 0 ? 'positive' : 'negative'}">${priceDiff >= 0 ? '+' : ''}${formatPrice(priceDiff)}원</span>
+          </div>
+        `;
+      } else if (request.modification_type === 'cancellation') {
+        return `
+          <div class="info-item">
+            <label>취소 요청:</label>
+            <span>전체 예약 취소</span>
+          </div>
+          <div class="info-item">
+            <label>환불 금액:</label>
+            <span class="refund-amount">${formatPrice(request.refund_amount || 0)}원</span>
+          </div>
+        `;
+      }
+      return '-';
+    }
 
     // DOM이 로드된 후 시스템 초기화
     document.addEventListener('DOMContentLoaded', async function() {

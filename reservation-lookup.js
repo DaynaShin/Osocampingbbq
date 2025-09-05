@@ -608,6 +608,495 @@ function contactAdmin(reservationNumber) {
     showMessage(`예약번호 ${reservationNumber}에 대한 문의사항이 있으시면 관리자에게 연락해주세요.`, 'info');
 }
 
+// ===============================
+// Phase 3.3: 예약 변경/취소 기능
+// ===============================
+
+let currentReservation = null;
+
+// 예약 조회 결과에 변경/취소 버튼 표시
+async function displayReservationWithModificationOptions(reservation, source = 'simple') {
+    currentReservation = reservation;
+    
+    // 기존 예약 상세 정보 표시
+    displayReservationDetails(reservation, source);
+    
+    // 변경/취소 가능 여부 확인
+    try {
+        const canModify = await canModifyReservation(reservation.id);
+        const canCancel = await canModifyReservation(reservation.id, 'cancel');
+        
+        if (canModify.can_modify || canCancel.can_modify) {
+            showModificationSection(canModify, canCancel);
+        }
+    } catch (error) {
+        console.error('변경 가능 여부 확인 실패:', error);
+    }
+}
+
+// 변경/취소 섹션 표시
+function showModificationSection(canModify, canCancel) {
+    const modificationSection = document.getElementById('modificationSection');
+    const changeBtn = document.getElementById('changeReservationBtn');
+    const cancelBtn = document.getElementById('cancelReservationBtn');
+    
+    // 변경 버튼 활성화/비활성화
+    if (canModify.can_modify) {
+        changeBtn.disabled = false;
+        changeBtn.title = '';
+    } else {
+        changeBtn.disabled = true;
+        changeBtn.title = canModify.reason || '변경할 수 없습니다';
+    }
+    
+    // 취소 버튼 활성화/비활성화
+    if (canCancel.can_modify) {
+        cancelBtn.disabled = false;
+        cancelBtn.title = '';
+    } else {
+        cancelBtn.disabled = true;
+        cancelBtn.title = canCancel.reason || '취소할 수 없습니다';
+    }
+    
+    modificationSection.style.display = 'block';
+    
+    // 정책 정보 표시
+    if (canModify.policy_name || canCancel.policy_name) {
+        showPolicyInfo(canModify, canCancel);
+    }
+}
+
+// 정책 정보 표시
+async function showPolicyInfo(canModify, canCancel) {
+    const policyInfo = document.getElementById('policyInfo');
+    const policyDetails = document.getElementById('policyDetails');
+    
+    try {
+        const policy = await getApplicableCancellationPolicy(currentReservation.id);
+        
+        let policyHtml = `
+            <div class="policy-item">
+                <strong>적용 정책:</strong> ${policy.policy_name}
+            </div>
+        `;
+        
+        if (canModify.can_modify) {
+            policyHtml += `
+                <div class="policy-item">
+                    <strong>변경 가능 횟수:</strong> ${canModify.remaining_changes}회 남음
+                </div>
+                <div class="policy-item">
+                    <strong>변경 수수료:</strong> ₩${policy.change_fee?.toLocaleString() || 0}
+                </div>
+            `;
+        }
+        
+        if (canCancel.can_modify) {
+            policyHtml += `
+                <div class="policy-item">
+                    <strong>취소 마감:</strong> ${canCancel.hours_before}시간 전까지
+                </div>
+            `;
+        }
+        
+        // 환불 정책 표시
+        if (policy.refund_rules) {
+            policyHtml += '<div class="refund-rules"><strong>환불 정책:</strong><ul>';
+            policy.refund_rules.forEach(rule => {
+                policyHtml += `<li>${rule.description || `${rule.days_before}일 전: ${rule.refund_rate}% 환불`}</li>`;
+            });
+            policyHtml += '</ul></div>';
+        }
+        
+        policyDetails.innerHTML = policyHtml;
+        policyInfo.style.display = 'block';
+    } catch (error) {
+        console.error('정책 정보 로드 실패:', error);
+    }
+}
+
+// 예약 변경 모달 열기
+async function openChangeModal() {
+    if (!currentReservation) return;
+    
+    const modal = document.getElementById('changeModal');
+    
+    try {
+        // 변경 수수료 정보 로드
+        const policy = await getApplicableCancellationPolicy(currentReservation.id);
+        document.getElementById('changeFeeAmount').textContent = `₩${policy.change_fee?.toLocaleString() || 0}`;
+        
+        // 현재 날짜를 최소 날짜로 설정
+        const today = new Date();
+        const minDate = new Date(today.getTime() + 24 * 60 * 60 * 1000); // 내일부터
+        document.getElementById('newReservationDate').min = minDate.toISOString().split('T')[0];
+        
+        modal.style.display = 'block';
+    } catch (error) {
+        console.error('변경 모달 열기 실패:', error);
+        showMessage('변경 정보를 불러올 수 없습니다.', 'error');
+    }
+}
+
+// 예약 취소 모달 열기
+async function openCancelModal() {
+    if (!currentReservation) return;
+    
+    const modal = document.getElementById('cancelModal');
+    
+    try {
+        // 환불 금액 계산
+        const refundInfo = await calculateRefundAmount(currentReservation.id);
+        
+        // 환불 정보 표시
+        document.getElementById('originalAmount').textContent = `₩${refundInfo.original_amount?.toLocaleString() || 0}`;
+        document.getElementById('refundRate').textContent = `${refundInfo.refund_rate || 0}%`;
+        document.getElementById('cancellationFee').textContent = `₩${refundInfo.cancellation_fee?.toLocaleString() || 0}`;
+        document.getElementById('finalRefundAmount').textContent = `₩${refundInfo.refund_amount?.toLocaleString() || 0}`;
+        
+        modal.style.display = 'block';
+    } catch (error) {
+        console.error('취소 모달 열기 실패:', error);
+        showMessage('취소 정보를 불러올 수 없습니다.', 'error');
+    }
+}
+
+// 날짜 변경 시 사용 가능한 시간대 로드
+async function loadAvailableTimeSlots() {
+    const newDate = document.getElementById('newReservationDate').value;
+    const timeSlotsContainer = document.getElementById('availableTimeSlots');
+    
+    if (!newDate || !currentReservation) {
+        timeSlotsContainer.innerHTML = '';
+        return;
+    }
+    
+    try {
+        const options = await getAvailableModificationOptions(currentReservation.id, newDate);
+        
+        if (options.length === 0) {
+            timeSlotsContainer.innerHTML = '<p class="no-options">해당 날짜에 사용 가능한 시간대가 없습니다.</p>';
+            return;
+        }
+        
+        let html = '<div class="time-slot-options">';
+        options.forEach(option => {
+            const isSelected = option.sku_code === currentReservation.sku_code;
+            const isAvailable = option.is_available;
+            
+            html += `
+                <div class="time-slot-option ${isSelected ? 'selected' : ''} ${!isAvailable ? 'unavailable' : ''}" 
+                     data-sku-code="${option.sku_code}"
+                     data-price="${option.total_price}">
+                    <div class="slot-info">
+                        <div class="slot-name">${option.time_slot_name}</div>
+                        <div class="slot-price">₩${option.total_price.toLocaleString()}</div>
+                    </div>
+                    ${!isAvailable ? '<div class="unavailable-text">예약 불가</div>' : ''}
+                    ${isSelected ? '<div class="current-text">현재 예약</div>' : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        timeSlotsContainer.innerHTML = html;
+        
+        // 클릭 이벤트 추가
+        timeSlotsContainer.querySelectorAll('.time-slot-option:not(.unavailable)').forEach(option => {
+            option.addEventListener('click', () => {
+                // 기존 선택 해제
+                timeSlotsContainer.querySelectorAll('.time-slot-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                // 새로운 선택
+                option.classList.add('selected');
+            });
+        });
+        
+    } catch (error) {
+        console.error('시간대 로드 실패:', error);
+        timeSlotsContainer.innerHTML = '<p class="error">시간대 정보를 불러올 수 없습니다.</p>';
+    }
+}
+
+// 인원 변경 시 가격 미리보기
+async function updateGuestsPricePreview() {
+    const newGuestCount = document.getElementById('newGuestCount').value;
+    const pricePreview = document.getElementById('guestsPricePreview');
+    
+    if (!newGuestCount || !currentReservation) {
+        pricePreview.innerHTML = '';
+        return;
+    }
+    
+    try {
+        const newPrice = await calculateTotalPriceWithGuests(
+            currentReservation.sku_code, 
+            currentReservation.reservation_date, 
+            parseInt(newGuestCount)
+        );
+        
+        const priceDiff = newPrice - currentReservation.total_amount;
+        const diffText = priceDiff > 0 ? `+₩${priceDiff.toLocaleString()}` : 
+                        priceDiff < 0 ? `-₩${Math.abs(priceDiff).toLocaleString()}` : '변경 없음';
+        
+        pricePreview.innerHTML = `
+            <div class="price-comparison">
+                <div class="current-price">현재: ₩${currentReservation.total_amount.toLocaleString()}</div>
+                <div class="new-price">변경 후: ₩${newPrice.toLocaleString()}</div>
+                <div class="price-diff ${priceDiff > 0 ? 'increase' : priceDiff < 0 ? 'decrease' : 'same'}">
+                    차액: ${diffText}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('가격 미리보기 실패:', error);
+        pricePreview.innerHTML = '<p class="error">가격 계산 중 오류가 발생했습니다.</p>';
+    }
+}
+
+// 변경 요청 제출
+async function submitChangeRequest() {
+    if (!currentReservation) return;
+    
+    const changeType = document.querySelector('input[name="changeType"]:checked').value;
+    const reason = document.getElementById('changeReason').value;
+    const submitBtn = document.getElementById('submitChangeBtn');
+    
+    let newData = {};
+    let modificationType = '';
+    
+    if (changeType === 'date') {
+        const newDate = document.getElementById('newReservationDate').value;
+        const selectedSlot = document.querySelector('.time-slot-option.selected');
+        
+        if (!newDate) {
+            showMessage('새로운 예약일을 선택해주세요.', 'error');
+            return;
+        }
+        
+        if (!selectedSlot) {
+            showMessage('시간대를 선택해주세요.', 'error');
+            return;
+        }
+        
+        newData = {
+            reservation_date: newDate,
+            sku_code: selectedSlot.dataset.skuCode,
+            total_price: parseInt(selectedSlot.dataset.price)
+        };
+        modificationType = 'change_date';
+        
+    } else if (changeType === 'guests') {
+        const newGuestCount = document.getElementById('newGuestCount').value;
+        
+        if (!newGuestCount) {
+            showMessage('새로운 인원수를 선택해주세요.', 'error');
+            return;
+        }
+        
+        const newPrice = await calculateTotalPriceWithGuests(
+            currentReservation.sku_code,
+            currentReservation.reservation_date,
+            parseInt(newGuestCount)
+        );
+        
+        newData = {
+            guest_count: parseInt(newGuestCount),
+            total_price: newPrice
+        };
+        modificationType = 'change_guests';
+    }
+    
+    setButtonLoading(submitBtn, true);
+    
+    try {
+        const modificationId = await createModificationRequest(
+            currentReservation.id,
+            modificationType,
+            currentReservation.customer_phone,
+            newData,
+            reason
+        );
+        
+        showMessage('변경 요청이 성공적으로 접수되었습니다. 관리자 승인 후 처리됩니다.', 'success');
+        closeChangeModal();
+        
+        // 변경 요청 접수 알림 (Phase 3.1 연동)
+        if (window.notificationSystem) {
+            notificationSystem.showToast('변경 요청 접수', '요청이 성공적으로 접수되었습니다.');
+        }
+        
+    } catch (error) {
+        console.error('변경 요청 실패:', error);
+        showMessage('변경 요청 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+    } finally {
+        setButtonLoading(submitBtn, false);
+    }
+}
+
+// 취소 요청 제출
+async function submitCancelRequest() {
+    if (!currentReservation) return;
+    
+    const reason = document.getElementById('cancelReason').value;
+    const submitBtn = document.getElementById('submitCancelBtn');
+    
+    setButtonLoading(submitBtn, true);
+    
+    try {
+        const modificationId = await cancelReservation(
+            currentReservation.id,
+            currentReservation.customer_phone,
+            reason || '고객 요청'
+        );
+        
+        showMessage('취소 요청이 성공적으로 접수되었습니다. 관리자 승인 후 환불 처리됩니다.', 'success');
+        closeCancelModal();
+        
+        // 취소 요청 접수 알림 (Phase 3.1 연동)
+        if (window.notificationSystem) {
+            notificationSystem.showToast('취소 요청 접수', '요청이 성공적으로 접수되었습니다.');
+        }
+        
+        // 예약 상태를 로컬에서 업데이트 (실제 상태는 관리자 승인 후 변경)
+        setTimeout(() => {
+            resetLookup();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('취소 요청 실패:', error);
+        showMessage('취소 요청 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+    } finally {
+        setButtonLoading(submitBtn, false);
+    }
+}
+
+// 모달 닫기 함수들
+function closeChangeModal() {
+    document.getElementById('changeModal').style.display = 'none';
+    // 폼 초기화
+    document.querySelector('input[name="changeType"][value="date"]').checked = true;
+    document.getElementById('newReservationDate').value = '';
+    document.getElementById('newGuestCount').value = '';
+    document.getElementById('changeReason').value = '';
+    document.getElementById('availableTimeSlots').innerHTML = '';
+    document.getElementById('guestsPricePreview').innerHTML = '';
+    toggleChangeForm();
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').style.display = 'none';
+    document.getElementById('cancelReason').value = '';
+}
+
+// 변경 타입에 따른 폼 전환
+function toggleChangeForm() {
+    const changeType = document.querySelector('input[name="changeType"]:checked').value;
+    const dateForm = document.getElementById('dateChangeForm');
+    const guestsForm = document.getElementById('guestsChangeForm');
+    
+    if (changeType === 'date') {
+        dateForm.style.display = 'block';
+        guestsForm.style.display = 'none';
+    } else {
+        dateForm.style.display = 'none';
+        guestsForm.style.display = 'block';
+    }
+}
+
+// ===============================
+// 이벤트 리스너 설정
+// ===============================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 기존 이벤트 리스너들...
+    
+    // Phase 3.3: 변경/취소 관련 이벤트 리스너
+    
+    // 변경 버튼
+    const changeReservationBtn = document.getElementById('changeReservationBtn');
+    if (changeReservationBtn) {
+        changeReservationBtn.addEventListener('click', openChangeModal);
+    }
+    
+    // 취소 버튼
+    const cancelReservationBtn = document.getElementById('cancelReservationBtn');
+    if (cancelReservationBtn) {
+        cancelReservationBtn.addEventListener('click', openCancelModal);
+    }
+    
+    // 변경 모달 관련
+    const closeChangeModal = document.getElementById('closeChangeModal');
+    if (closeChangeModal) {
+        closeChangeModal.addEventListener('click', closeChangeModal);
+    }
+    
+    const cancelChangeBtn = document.getElementById('cancelChangeBtn');
+    if (cancelChangeBtn) {
+        cancelChangeBtn.addEventListener('click', closeChangeModal);
+    }
+    
+    const submitChangeBtn = document.getElementById('submitChangeBtn');
+    if (submitChangeBtn) {
+        submitChangeBtn.addEventListener('click', submitChangeRequest);
+    }
+    
+    // 취소 모달 관련
+    const closeCancelModalBtn = document.getElementById('closeCancelModal');
+    if (closeCancelModalBtn) {
+        closeCancelModalBtn.addEventListener('click', closeCancelModal);
+    }
+    
+    const cancelCancelBtn = document.getElementById('cancelCancelBtn');
+    if (cancelCancelBtn) {
+        cancelCancelBtn.addEventListener('click', closeCancelModal);
+    }
+    
+    const submitCancelBtn = document.getElementById('submitCancelBtn');
+    if (submitCancelBtn) {
+        submitCancelBtn.addEventListener('click', submitCancelRequest);
+    }
+    
+    // 변경 타입 라디오 버튼
+    const changeTypeRadios = document.querySelectorAll('input[name="changeType"]');
+    changeTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleChangeForm);
+    });
+    
+    // 날짜 변경 시 시간대 로드
+    const newReservationDate = document.getElementById('newReservationDate');
+    if (newReservationDate) {
+        newReservationDate.addEventListener('change', loadAvailableTimeSlots);
+    }
+    
+    // 인원 변경 시 가격 미리보기
+    const newGuestCount = document.getElementById('newGuestCount');
+    if (newGuestCount) {
+        newGuestCount.addEventListener('change', updateGuestsPricePreview);
+    }
+    
+    // 모달 외부 클릭 시 닫기
+    window.addEventListener('click', function(event) {
+        const changeModal = document.getElementById('changeModal');
+        const cancelModal = document.getElementById('cancelModal');
+        
+        if (event.target === changeModal) {
+            closeChangeModal();
+        }
+        if (event.target === cancelModal) {
+            closeCancelModal();
+        }
+    });
+});
+
+// displayReservationDetails 함수를 오버라이드하여 변경/취소 옵션 포함
+const originalDisplayReservationDetails = displayReservationDetails;
+displayReservationDetails = function(reservation, source = 'simple') {
+    originalDisplayReservationDetails(reservation, source);
+    displayReservationWithModificationOptions(reservation, source);
+};
+
 // Supabase 함수들을 supabase-config-v2.js에 추가해야 함
 window.lookupReservationSimple = lookupReservationSimple;
 window.customerLogin = customerLogin;

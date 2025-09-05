@@ -1315,3 +1315,514 @@ window.retryFailedMessages = retryFailedMessages;
 window.testMessageSystem = testMessageSystem;
 window.previewMessage = previewMessage;
 window.getMessageStats = getMessageStats;
+
+// =================================================================
+// Phase 3.3: 예약 변경/취소 시스템
+// =================================================================
+
+class ReservationModificationService {
+  constructor() {
+    this.isInitialized = false;
+  }
+
+  async initialize() {
+    if (this.isInitialized) return;
+    
+    try {
+      // Supabase 연결 확인
+      if (!window.supabase) {
+        throw new Error('Supabase client가 초기화되지 않았습니다.');
+      }
+      
+      this.isInitialized = true;
+      console.log('ReservationModificationService initialized successfully');
+    } catch (error) {
+      console.error('ReservationModificationService 초기화 실패:', error);
+      throw error;
+    }
+  }
+
+  // 취소 정책 조회
+  async getCancellationPolicies(isActive = true) {
+    try {
+      let query = supabase
+        .from('cancellation_policies')
+        .select('*');
+        
+      if (isActive) {
+        query = query.eq('is_active', true);
+      }
+      
+      const { data, error } = await query.order('is_default', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('취소 정책 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 적용 가능한 취소 정책 조회
+  async getApplicableCancellationPolicy(reservationId) {
+    try {
+      const { data, error } = await supabase.rpc('get_applicable_cancellation_policy', {
+        p_reservation_id: reservationId
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('적용 가능한 취소 정책 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 환불 금액 계산
+  async calculateRefundAmount(reservationId, cancellationDate = null) {
+    try {
+      const { data, error } = await supabase.rpc('calculate_refund_amount', {
+        p_reservation_id: reservationId,
+        p_cancellation_date: cancellationDate || new Date().toISOString()
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('환불 금액 계산 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 변경 가능 여부 확인
+  async canModifyReservation(reservationId, modificationType = 'change_date') {
+    try {
+      const { data, error } = await supabase.rpc('can_modify_reservation', {
+        p_reservation_id: reservationId,
+        p_modification_type: modificationType
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('예약 변경 가능 여부 확인 실패:', error);
+      throw error;
+    }
+  }
+
+  // 변경 가능한 옵션 조회 (날짜/시간 변경용)
+  async getAvailableModificationOptions(reservationId, newDate = null) {
+    try {
+      const { data, error } = await supabase.rpc('get_available_modification_options', {
+        p_reservation_id: reservationId,
+        p_new_date: newDate
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('변경 가능한 옵션 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 변경 요청 생성
+  async createModificationRequest(reservationId, modificationType, customerPhone, newData = null, reason = null) {
+    try {
+      const { data, error } = await supabase.rpc('create_modification_request', {
+        p_reservation_id: reservationId,
+        p_modification_type: modificationType,
+        p_customer_phone: customerPhone,
+        p_new_data: newData,
+        p_reason: reason
+      });
+      
+      if (error) throw error;
+      return data; // modification_id 반환
+    } catch (error) {
+      console.error('변경 요청 생성 실패:', error);
+      throw error;
+    }
+  }
+
+  // 변경 요청 승인/거부 (관리자용)
+  async processModificationRequest(modificationId, action, adminNotes = null, processedBy = 'admin') {
+    try {
+      const { data, error } = await supabase.rpc('process_modification_request', {
+        p_modification_id: modificationId,
+        p_action: action, // 'approve' or 'reject'
+        p_admin_notes: adminNotes,
+        p_processed_by: processedBy
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('변경 요청 처리 실패:', error);
+      throw error;
+    }
+  }
+
+  // 고객 변경 내역 조회
+  async getCustomerModifications(customerPhone, limit = 10) {
+    try {
+      const { data, error } = await supabase.rpc('get_customer_modifications', {
+        p_customer_phone: customerPhone,
+        p_limit: limit
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('고객 변경 내역 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 모든 변경 요청 조회 (관리자용)
+  async getAllModificationRequests(status = null, limit = 50) {
+    try {
+      const { data, error } = await supabase.rpc('get_all_modification_requests', {
+        p_status: status,
+        p_limit: limit
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('모든 변경 요청 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 변경 요청 상세 조회
+  async getModificationRequestDetails(modificationId) {
+    try {
+      const { data, error } = await supabase
+        .from('reservation_modifications')
+        .select(`
+          *,
+          reservations (
+            reservation_number,
+            name,
+            phone,
+            reservation_date,
+            guest_count,
+            total_price,
+            status,
+            sku_catalog (
+              resource_catalog (display_name),
+              time_slot_catalog (display_name)
+            )
+          )
+        `)
+        .eq('id', modificationId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('변경 요청 상세 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 취소 간편 함수
+  async cancelReservation(reservationId, customerPhone, reason = '고객 요청') {
+    try {
+      return await this.createModificationRequest(
+        reservationId,
+        'cancel',
+        customerPhone,
+        null,
+        reason
+      );
+    } catch (error) {
+      console.error('예약 취소 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 날짜 변경 간편 함수
+  async changeReservationDate(reservationId, customerPhone, newDate, newSkuCode = null, reason = '날짜 변경 요청') {
+    try {
+      const newData = {
+        reservation_date: newDate
+      };
+      
+      if (newSkuCode) {
+        newData.sku_code = newSkuCode;
+        
+        // 새로운 SKU의 가격 계산
+        const reservation = await this.getReservationById(reservationId);
+        if (reservation) {
+          const newPrice = await calculateTotalPriceWithGuests(newSkuCode, newDate, reservation.guest_count);
+          newData.total_price = newPrice;
+        }
+      }
+      
+      return await this.createModificationRequest(
+        reservationId,
+        'change_date',
+        customerPhone,
+        newData,
+        reason
+      );
+    } catch (error) {
+      console.error('예약 날짜 변경 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 인원 변경 간편 함수
+  async changeReservationGuests(reservationId, customerPhone, newGuestCount, reason = '인원 변경 요청') {
+    try {
+      const reservation = await this.getReservationById(reservationId);
+      if (!reservation) {
+        throw new Error('예약을 찾을 수 없습니다.');
+      }
+      
+      // 새로운 인원수로 가격 재계산
+      const newPrice = await calculateTotalPriceWithGuests(
+        reservation.sku_code, 
+        reservation.reservation_date, 
+        newGuestCount
+      );
+      
+      const newData = {
+        guest_count: newGuestCount,
+        total_price: newPrice
+      };
+      
+      return await this.createModificationRequest(
+        reservationId,
+        'change_guests',
+        customerPhone,
+        newData,
+        reason
+      );
+    } catch (error) {
+      console.error('예약 인원 변경 실패:', error);
+      throw error;
+    }
+  }
+
+  // 예약 정보 조회 헬퍼
+  async getReservationById(reservationId) {
+    try {
+      const { data, error } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('id', reservationId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('예약 조회 실패:', error);
+      return null;
+    }
+  }
+
+  // 변경 타입별 한글 이름
+  getModificationTypeName(type) {
+    const typeNames = {
+      'change_date': '날짜 변경',
+      'change_time': '시간 변경', 
+      'change_guests': '인원 변경',
+      'cancel': '예약 취소',
+      'partial_refund': '부분 환불'
+    };
+    return typeNames[type] || type;
+  }
+
+  // 상태별 한글 이름
+  getStatusName(status) {
+    const statusNames = {
+      'pending': '승인 대기',
+      'approved': '승인됨',
+      'rejected': '거부됨',
+      'processing': '처리 중',
+      'completed': '완료'
+    };
+    return statusNames[status] || status;
+  }
+
+  // 변경 요청 통계
+  async getModificationStats(dateFrom = null, dateTo = null) {
+    try {
+      let query = supabase
+        .from('reservation_modifications')
+        .select('modification_type, status, created_at');
+
+      if (dateFrom) {
+        query = query.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte('created_at', dateTo);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // 통계 계산
+      const stats = {
+        total: data.length,
+        pending: data.filter(d => d.status === 'pending').length,
+        approved: data.filter(d => d.status === 'approved').length,
+        rejected: data.filter(d => d.status === 'rejected').length,
+        completed: data.filter(d => d.status === 'completed').length,
+        cancel: data.filter(d => d.modification_type === 'cancel').length,
+        change_date: data.filter(d => d.modification_type === 'change_date').length,
+        change_guests: data.filter(d => d.modification_type === 'change_guests').length
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('변경 요청 통계 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 테스트 함수
+  async testModificationSystem(reservationId) {
+    try {
+      const { data, error } = await supabase.rpc('test_modification_system', {
+        p_reservation_id: reservationId
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('변경 시스템 테스트 실패:', error);
+      throw error;
+    }
+  }
+}
+
+// ReservationModificationService 인스턴스 생성 및 초기화
+const reservationModificationService = new ReservationModificationService();
+
+// 전역 함수로 노출
+async function getCancellationPolicies(isActive = true) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getCancellationPolicies(isActive);
+}
+
+async function getApplicableCancellationPolicy(reservationId) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getApplicableCancellationPolicy(reservationId);
+}
+
+async function calculateRefundAmount(reservationId, cancellationDate = null) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.calculateRefundAmount(reservationId, cancellationDate);
+}
+
+async function canModifyReservation(reservationId, modificationType = 'change_date') {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.canModifyReservation(reservationId, modificationType);
+}
+
+async function getAvailableModificationOptions(reservationId, newDate = null) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getAvailableModificationOptions(reservationId, newDate);
+}
+
+async function createModificationRequest(reservationId, modificationType, customerPhone, newData = null, reason = null) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.createModificationRequest(reservationId, modificationType, customerPhone, newData, reason);
+}
+
+async function processModificationRequest(modificationId, action, adminNotes = null, processedBy = 'admin') {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.processModificationRequest(modificationId, action, adminNotes, processedBy);
+}
+
+async function getCustomerModifications(customerPhone, limit = 10) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getCustomerModifications(customerPhone, limit);
+}
+
+async function getAllModificationRequests(status = null, limit = 50) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getAllModificationRequests(status, limit);
+}
+
+async function getModificationRequestDetails(modificationId) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getModificationRequestDetails(modificationId);
+}
+
+async function cancelReservation(reservationId, customerPhone, reason = '고객 요청') {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.cancelReservation(reservationId, customerPhone, reason);
+}
+
+async function changeReservationDate(reservationId, customerPhone, newDate, newSkuCode = null, reason = '날짜 변경 요청') {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.changeReservationDate(reservationId, customerPhone, newDate, newSkuCode, reason);
+}
+
+async function changeReservationGuests(reservationId, customerPhone, newGuestCount, reason = '인원 변경 요청') {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.changeReservationGuests(reservationId, customerPhone, newGuestCount, reason);
+}
+
+async function getModificationStats(dateFrom = null, dateTo = null) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.getModificationStats(dateFrom, dateTo);
+}
+
+async function testModificationSystem(reservationId) {
+  if (!reservationModificationService.isInitialized) {
+    await reservationModificationService.initialize();
+  }
+  return reservationModificationService.testModificationSystem(reservationId);
+}
+
+// Phase 3.3: 예약 변경/취소 시스템 함수 노출
+window.reservationModificationService = reservationModificationService;
+window.getCancellationPolicies = getCancellationPolicies;
+window.getApplicableCancellationPolicy = getApplicableCancellationPolicy;
+window.calculateRefundAmount = calculateRefundAmount;
+window.canModifyReservation = canModifyReservation;
+window.getAvailableModificationOptions = getAvailableModificationOptions;
+window.createModificationRequest = createModificationRequest;
+window.processModificationRequest = processModificationRequest;
+window.getCustomerModifications = getCustomerModifications;
+window.getAllModificationRequests = getAllModificationRequests;
+window.getModificationRequestDetails = getModificationRequestDetails;
+window.cancelReservation = cancelReservation;
+window.changeReservationDate = changeReservationDate;
+window.changeReservationGuests = changeReservationGuests;
+window.getModificationStats = getModificationStats;
+window.testModificationSystem = testModificationSystem;
