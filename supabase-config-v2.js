@@ -908,3 +908,410 @@ window.lookupReservationSimple = lookupReservationSimple;
 window.createCustomerAccount = createCustomerAccount;
 window.customerLogin = customerLogin;
 window.getCustomerReservations = getCustomerReservations;
+
+// =================================================================
+// Phase 3.2: SMS/이메일 자동 발송 시스템
+// =================================================================
+
+class MessageService {
+  constructor() {
+    this.isInitialized = false;
+  }
+
+  async initialize() {
+    if (this.isInitialized) return;
+    
+    try {
+      // Supabase 연결 확인
+      if (!window.supabase) {
+        throw new Error('Supabase client가 초기화되지 않았습니다.');
+      }
+      
+      this.isInitialized = true;
+      console.log('MessageService initialized successfully');
+    } catch (error) {
+      console.error('MessageService 초기화 실패:', error);
+      throw error;
+    }
+  }
+
+  // 메시지 템플릿 관리
+  async getMessageTemplates(templateCode = null) {
+    try {
+      let query = supabase
+        .from('message_templates')
+        .select('*')
+        .eq('is_active', true);
+        
+      if (templateCode) {
+        query = query.eq('template_code', templateCode);
+      }
+      
+      const { data, error } = await query.order('template_name');
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('템플릿 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  async updateMessageTemplate(templateCode, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('message_templates')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('template_code', templateCode)
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    } catch (error) {
+      console.error('템플릿 업데이트 실패:', error);
+      throw error;
+    }
+  }
+
+  // SMS 발송 관리
+  async sendSMSMessage(reservationId, templateCode, phone = null) {
+    try {
+      const { data, error } = await supabase.rpc('send_sms_message', {
+        p_reservation_id: reservationId,
+        p_template_code: templateCode,
+        p_phone: phone
+      });
+      
+      if (error) throw error;
+      return data; // log_id 반환
+    } catch (error) {
+      console.error('SMS 발송 실패:', error);
+      throw error;
+    }
+  }
+
+  // 이메일 발송 관리
+  async sendEmailMessage(reservationId, templateCode, email = null) {
+    try {
+      const { data, error } = await supabase.rpc('send_email_message', {
+        p_reservation_id: reservationId,
+        p_template_code: templateCode,
+        p_email: email
+      });
+      
+      if (error) throw error;
+      return data; // log_id 반환
+    } catch (error) {
+      console.error('이메일 발송 실패:', error);
+      throw error;
+    }
+  }
+
+  // 통합 메시지 발송 (SMS + 이메일)
+  async sendReservationMessage(reservationId, templateCode, sendSMS = true, sendEmail = true) {
+    try {
+      const { data, error } = await supabase.rpc('send_reservation_message', {
+        p_reservation_id: reservationId,
+        p_template_code: templateCode,
+        p_send_sms: sendSMS,
+        p_send_email: sendEmail
+      });
+      
+      if (error) throw error;
+      return data; // { sms_log_id, email_log_id } 객체 반환
+    } catch (error) {
+      console.error('통합 메시지 발송 실패:', error);
+      throw error;
+    }
+  }
+
+  // 메시지 발송 로그 조회
+  async getMessageLogs(limit = 50, status = null, messageType = null) {
+    try {
+      const { data, error } = await supabase.rpc('get_message_logs', {
+        p_limit: limit,
+        p_status: status,
+        p_message_type: messageType
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('메시지 로그 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 메시지 상태 업데이트 (외부 서비스 콜백용)
+  async updateMessageStatus(logId, status, providerResponse = null, errorMessage = null) {
+    try {
+      const { data, error } = await supabase.rpc('update_message_status', {
+        p_log_id: logId,
+        p_status: status,
+        p_provider_response: providerResponse,
+        p_error_message: errorMessage
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('메시지 상태 업데이트 실패:', error);
+      throw error;
+    }
+  }
+
+  // 일일 리마인더 발송
+  async sendDailyReminders() {
+    try {
+      const { data, error } = await supabase.rpc('send_daily_reminders');
+      
+      if (error) throw error;
+      return data; // 발송된 리마인더 수
+    } catch (error) {
+      console.error('일일 리마인더 발송 실패:', error);
+      throw error;
+    }
+  }
+
+  // 실패한 메시지 재발송
+  async retryFailedMessages(maxRetries = 3) {
+    try {
+      const { data, error } = await supabase.rpc('retry_failed_messages', {
+        p_max_retries: maxRetries
+      });
+      
+      if (error) throw error;
+      return data; // 재발송 시도된 메시지 수
+    } catch (error) {
+      console.error('실패 메시지 재발송 실패:', error);
+      throw error;
+    }
+  }
+
+  // 메시지 시스템 테스트
+  async testMessageSystem(reservationId) {
+    try {
+      const { data, error } = await supabase.rpc('test_message_system', {
+        p_reservation_id: reservationId
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('메시지 시스템 테스트 실패:', error);
+      throw error;
+    }
+  }
+
+  // 템플릿 변수 치환 미리보기
+  async previewMessage(templateCode, reservationId) {
+    try {
+      // 템플릿 가져오기
+      const template = await this.getMessageTemplates(templateCode);
+      if (!template || template.length === 0) {
+        throw new Error('템플릿을 찾을 수 없습니다.');
+      }
+
+      // 예약 정보 가져오기
+      const { data: reservation, error } = await supabase
+        .from('reservations')
+        .select(`
+          *,
+          sku_catalog (
+            resource_catalog (display_name),
+            time_slot_catalog (display_name)
+          )
+        `)
+        .eq('id', reservationId)
+        .single();
+
+      if (error) throw error;
+
+      // 변수 치환
+      let content = template[0].content;
+      let subject = template[0].subject || '';
+
+      const variables = {
+        '{reservation_number}': reservation.reservation_number || '',
+        '{customer_name}': reservation.name || '',
+        '{customer_phone}': reservation.phone || '',
+        '{customer_email}': reservation.email || '',
+        '{facility_name}': reservation.sku_catalog?.resource_catalog?.display_name || '',
+        '{time_slot}': reservation.sku_catalog?.time_slot_catalog?.display_name || '',
+        '{reservation_date}': reservation.reservation_date || '',
+        '{guest_count}': reservation.guest_count?.toString() || '',
+        '{total_price}': reservation.total_price?.toLocaleString() || '',
+        '{checkin_time}': this.getCheckinTime(reservation.sku_catalog?.time_slot_catalog?.slot_code),
+        '{cancellation_reason}': '관리자 요청'
+      };
+
+      // 변수 치환 수행
+      Object.entries(variables).forEach(([key, value]) => {
+        content = content.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
+        subject = subject.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
+      });
+
+      return {
+        template_code: templateCode,
+        message_type: template[0].message_type,
+        subject: subject,
+        content: content
+      };
+    } catch (error) {
+      console.error('메시지 미리보기 실패:', error);
+      throw error;
+    }
+  }
+
+  // 체크인 시간 계산 헬퍼
+  getCheckinTime(timeSlotCode) {
+    if (!timeSlotCode) return '체크인 시간 확인';
+    
+    if (timeSlotCode.includes('morning')) return '09:00';
+    if (timeSlotCode.includes('afternoon')) return '14:00';
+    if (timeSlotCode.includes('evening')) return '18:00';
+    
+    return '체크인 시간 확인';
+  }
+
+  // 발송 통계 조회
+  async getMessageStats(dateFrom = null, dateTo = null) {
+    try {
+      let query = supabase
+        .from('message_logs')
+        .select('message_type, status, created_at');
+
+      if (dateFrom) {
+        query = query.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte('created_at', dateTo);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // 통계 계산
+      const stats = {
+        total: data.length,
+        sms: data.filter(d => d.message_type === 'sms').length,
+        email: data.filter(d => d.message_type === 'email').length,
+        sent: data.filter(d => d.status === 'sent').length,
+        failed: data.filter(d => d.status === 'failed').length,
+        pending: data.filter(d => d.status === 'pending').length,
+        delivered: data.filter(d => d.status === 'delivered').length
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('발송 통계 조회 실패:', error);
+      throw error;
+    }
+  }
+}
+
+// MessageService 인스턴스 생성 및 초기화
+const messageService = new MessageService();
+
+// 전역 함수로 노출
+async function getMessageTemplates(templateCode = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.getMessageTemplates(templateCode);
+}
+
+async function updateMessageTemplate(templateCode, updates) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.updateMessageTemplate(templateCode, updates);
+}
+
+async function sendSMSMessage(reservationId, templateCode, phone = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.sendSMSMessage(reservationId, templateCode, phone);
+}
+
+async function sendEmailMessage(reservationId, templateCode, email = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.sendEmailMessage(reservationId, templateCode, email);
+}
+
+async function sendReservationMessage(reservationId, templateCode, sendSMS = true, sendEmail = true) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.sendReservationMessage(reservationId, templateCode, sendSMS, sendEmail);
+}
+
+async function getMessageLogs(limit = 50, status = null, messageType = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.getMessageLogs(limit, status, messageType);
+}
+
+async function updateMessageStatus(logId, status, providerResponse = null, errorMessage = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.updateMessageStatus(logId, status, providerResponse, errorMessage);
+}
+
+async function sendDailyReminders() {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.sendDailyReminders();
+}
+
+async function retryFailedMessages(maxRetries = 3) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.retryFailedMessages(maxRetries);
+}
+
+async function testMessageSystem(reservationId) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.testMessageSystem(reservationId);
+}
+
+async function previewMessage(templateCode, reservationId) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.previewMessage(templateCode, reservationId);
+}
+
+async function getMessageStats(dateFrom = null, dateTo = null) {
+  if (!messageService.isInitialized) {
+    await messageService.initialize();
+  }
+  return messageService.getMessageStats(dateFrom, dateTo);
+}
+
+// Phase 3.2: SMS/이메일 시스템 함수 노출
+window.messageService = messageService;
+window.getMessageTemplates = getMessageTemplates;
+window.updateMessageTemplate = updateMessageTemplate;
+window.sendSMSMessage = sendSMSMessage;
+window.sendEmailMessage = sendEmailMessage;
+window.sendReservationMessage = sendReservationMessage;
+window.getMessageLogs = getMessageLogs;
+window.updateMessageStatus = updateMessageStatus;
+window.sendDailyReminders = sendDailyReminders;
+window.retryFailedMessages = retryFailedMessages;
+window.testMessageSystem = testMessageSystem;
+window.previewMessage = previewMessage;
+window.getMessageStats = getMessageStats;

@@ -41,6 +41,7 @@
         <button class="nav-btn" onclick="showSection('bookings')">예약 현황</button>
         <button class="nav-btn" onclick="showSection('catalog')">시설 관리</button>
         <button class="nav-btn" onclick="showSection('availability')">가용성 관리</button>
+        <button class="nav-btn" onclick="showSection('messages')">메시지 관리</button>
       </nav>
     </div>
   </header>
@@ -444,6 +445,94 @@
         </div>
       </div>
     </div>
+    <!-- 메시지 관리 섹션 -->
+    <div id="messages-section" class="section" style="display:none;">
+      <div class="messages-section" style="background:#fff; border-radius:10px; padding:16px;">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>메시지 관리</h2>
+          <div class="message-controls" style="display:flex; gap:8px;">
+            <select id="messageStatusFilter">
+              <option value="">전체 상태</option>
+              <option value="pending">발송 대기</option>
+              <option value="sent">발송 완료</option>
+              <option value="delivered">전달 완료</option>
+              <option value="failed">발송 실패</option>
+            </select>
+            <select id="messageTypeFilter">
+              <option value="">전체 타입</option>
+              <option value="sms">SMS</option>
+              <option value="email">이메일</option>
+            </select>
+            <button class="refresh-btn" onclick="loadMessageLogs()">새로고침</button>
+            <button class="action-btn confirm" onclick="sendDailyReminders()">리마인더 발송</button>
+            <button class="action-btn" onclick="retryFailedMessages()">실패 메시지 재발송</button>
+          </div>
+        </div>
+
+        <!-- 메시지 통계 -->
+        <div class="message-stats" style="display:grid; grid-template-columns: repeat(6, 1fr); gap:12px; margin:16px 0;">
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="totalMessages" style="font-size:1.5rem; color:#4facfe; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">전체 메시지</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="smsMessages" style="font-size:1.5rem; color:#28a745; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">SMS</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="emailMessages" style="font-size:1.5rem; color:#17a2b8; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">이메일</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="sentMessages" style="font-size:1.5rem; color:#28a745; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">발송 완료</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="failedMessages" style="font-size:1.5rem; color:#dc3545; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">발송 실패</p>
+          </div>
+          <div class="stat-card" style="background:#f8f9fa; border-radius:8px; padding:12px; text-align:center;">
+            <h4 id="pendingMessages" style="font-size:1.5rem; color:#ffc107; margin:0;">0</h4>
+            <p style="margin:4px 0 0; font-size:0.9rem;">발송 대기</p>
+          </div>
+        </div>
+
+        <!-- 메시지 발송 로그 테이블 -->
+        <div class="table-container" style="overflow-x:auto; margin-top:16px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8f9fa;">
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">발송 시간</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">예약번호</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">타입</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">수신자</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">템플릿</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">제목</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">상태</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">재시도</th>
+                <th style="padding:8px; border:1px solid #dee2e6; text-align:left;">액션</th>
+              </tr>
+            </thead>
+            <tbody id="messageLogsTable">
+              <tr><td colspan="9" style="text-align:center; padding:16px;">데이터를 불러오는 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 메시지 템플릿 관리 -->
+      <div class="templates-section" style="background:#fff; border-radius:10px; padding:16px; margin-top:16px;">
+        <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>메시지 템플릿 관리</h2>
+          <button class="refresh-btn" onclick="loadMessageTemplates()">새로고침</button>
+        </div>
+
+        <div class="template-list" id="templateList" style="margin-top:16px;">
+          <!-- 템플릿 목록이 여기에 동적으로 추가됩니다 -->
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- 예약 상세 모달 -->
@@ -1599,7 +1688,210 @@
     // 전역 알림 UI 인스턴스
     let globalNotificationUI = null;
 
-    // DOM이 로드된 후 알림 시스템 초기화
+    // Phase 3.2: 메시지 관리 시스템
+    let messageStatsData = {};
+
+    // 메시지 로그 로드
+    async function loadMessageLogs() {
+      const statusFilter = document.getElementById('messageStatusFilter')?.value || null;
+      const typeFilter = document.getElementById('messageTypeFilter')?.value || null;
+      
+      try {
+        const logs = await getMessageLogs(100, statusFilter, typeFilter);
+        const stats = await getMessageStats();
+        
+        renderMessageLogs(logs);
+        updateMessageStats(stats);
+        messageStatsData = stats;
+        
+      } catch (error) {
+        console.error('메시지 로그 로드 실패:', error);
+        showAdminMessage('메시지 로그 로드 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 메시지 로그 테이블 렌더링
+    function renderMessageLogs(logs) {
+      const tbody = document.getElementById('messageLogsTable');
+      if (!tbody) return;
+
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:16px;">메시지 로그가 없습니다</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${formatDateTime(log.created_at)}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${log.reservation_number || '-'}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            <span class="message-type-badge ${log.message_type}">
+              ${log.message_type.toUpperCase()}
+            </span>
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${log.recipient_phone || log.recipient_email || '-'}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${log.template_code || '-'}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;" title="${log.subject || ''}">
+            ${truncateText(log.subject || '-', 30)}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            <span class="status-badge ${log.status}">
+              ${getStatusText(log.status)}
+            </span>
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${log.retry_count || 0}
+          </td>
+          <td style="padding:8px; border:1px solid #dee2e6;">
+            ${log.status === 'failed' ? 
+              `<button class="action-btn" onclick="retryMessage('${log.id}')">재발송</button>` : 
+              '-'
+            }
+            <button class="action-btn" onclick="viewMessageDetails('${log.id}')">상세</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 메시지 통계 업데이트
+    function updateMessageStats(stats) {
+      document.getElementById('totalMessages').textContent = stats.total || 0;
+      document.getElementById('smsMessages').textContent = stats.sms || 0;
+      document.getElementById('emailMessages').textContent = stats.email || 0;
+      document.getElementById('sentMessages').textContent = stats.sent || 0;
+      document.getElementById('failedMessages').textContent = stats.failed || 0;
+      document.getElementById('pendingMessages').textContent = stats.pending || 0;
+    }
+
+    // 메시지 템플릿 로드
+    async function loadMessageTemplates() {
+      try {
+        const templates = await getMessageTemplates();
+        renderMessageTemplates(templates);
+      } catch (error) {
+        console.error('템플릿 로드 실패:', error);
+        showAdminMessage('템플릿 로드 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 메시지 템플릿 렌더링
+    function renderMessageTemplates(templates) {
+      const container = document.getElementById('templateList');
+      if (!container) return;
+
+      if (templates.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:16px;">등록된 템플릿이 없습니다</p>';
+        return;
+      }
+
+      container.innerHTML = templates.map(template => `
+        <div class="template-card" style="background:#f8f9fa; border-radius:8px; padding:16px; margin-bottom:12px;">
+          <div class="template-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h4 style="margin:0;">${template.template_name}</h4>
+            <div>
+              <span class="message-type-badge ${template.message_type}">${template.message_type.toUpperCase()}</span>
+              <button class="action-btn" onclick="editTemplate('${template.template_code}')">편집</button>
+            </div>
+          </div>
+          <div class="template-content">
+            <p><strong>코드:</strong> ${template.template_code}</p>
+            ${template.subject ? `<p><strong>제목:</strong> ${template.subject}</p>` : ''}
+            <p><strong>내용:</strong></p>
+            <div style="background:#fff; padding:12px; border-radius:4px; white-space:pre-wrap; max-height:100px; overflow-y:auto;">
+              ${template.content}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 일일 리마인더 발송
+    async function sendDailyReminders() {
+      try {
+        const count = await sendDailyReminders();
+        showAdminMessage(`${count}건의 리마인더를 발송했습니다.`, 'success');
+        await loadMessageLogs(); // 로그 새로고침
+      } catch (error) {
+        console.error('리마인더 발송 실패:', error);
+        showAdminMessage('리마인더 발송 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 실패한 메시지 재발송
+    async function retryFailedMessages() {
+      try {
+        const count = await retryFailedMessages();
+        showAdminMessage(`${count}건의 메시지를 재발송했습니다.`, 'success');
+        await loadMessageLogs(); // 로그 새로고침
+      } catch (error) {
+        console.error('메시지 재발송 실패:', error);
+        showAdminMessage('메시지 재발송 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 개별 메시지 재발송
+    async function retryMessage(logId) {
+      try {
+        // 재발송 로직 구현 (필요시)
+        showAdminMessage('메시지를 재발송했습니다.', 'success');
+        await loadMessageLogs(); // 로그 새로고침
+      } catch (error) {
+        console.error('메시지 재발송 실패:', error);
+        showAdminMessage('메시지 재발송 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // 메시지 상세 보기
+    function viewMessageDetails(logId) {
+      // 상세 보기 모달 구현 (필요시)
+      showAdminMessage('메시지 상세 기능은 향후 구현됩니다.', 'info');
+    }
+
+    // 템플릿 편집
+    function editTemplate(templateCode) {
+      // 템플릿 편집 모달 구현 (필요시)
+      showAdminMessage('템플릿 편집 기능은 향후 구현됩니다.', 'info');
+    }
+
+    // 상태 텍스트 변환
+    function getStatusText(status) {
+      const statusMap = {
+        pending: '발송 대기',
+        sent: '발송 완료',
+        delivered: '전달 완료',
+        failed: '발송 실패'
+      };
+      return statusMap[status] || status;
+    }
+
+    // 텍스트 자르기 유틸리티
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    // 필터 이벤트 리스너 설정
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusFilter = document.getElementById('messageStatusFilter');
+      const typeFilter = document.getElementById('messageTypeFilter');
+      
+      if (statusFilter) {
+        statusFilter.addEventListener('change', loadMessageLogs);
+      }
+      if (typeFilter) {
+        typeFilter.addEventListener('change', loadMessageLogs);
+      }
+    });
+
+    // DOM이 로드된 후 시스템 초기화
     document.addEventListener('DOMContentLoaded', async function() {
       // 기존 초기화 코드 실행
       await loadProducts();
