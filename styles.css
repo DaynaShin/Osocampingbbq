@@ -1718,3 +1718,558 @@ footer {
         font-size: 0.9rem;
     }
 }
+
+/* Phase 2.1: 주말 요금 배지 스타일 */
+.weekend-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(255,107,53,0.3);
+}
+
+.weekend-notice {
+    font-size: 0.85rem;
+    color: #ff6b35;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(255,107,53,0.1);
+    border-radius: 4px;
+    border-left: 3px solid #ff6b35;
+}
+
+/* VIP동 주말 강조 - CSS has() 지원하지 않는 브라우저 고려 */
+.time-slot-card.weekend-rate {
+    border-color: #ff6b35;
+    box-shadow: 0 2px 8px rgba(255,107,53,0.2);
+}
+
+.time-slot-card.weekend-rate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255,107,53,0.3);
+}
+
+/* 주말 요금 표시 애니메이션 */
+@keyframes weekendPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Phase 2.2: 추가 인원 요금 관련 스타일 */
+.guest-count-note {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: normal;
+}
+
+.guest-info {
+    font-size: 0.85rem;
+    color: #007bff;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+.extra-fee-info {
+    font-size: 0.8rem;
+    color: #e67e22;
+    margin-top: 2px;
+}
+
+.price-breakdown {
+    text-align: left;
+    font-size: 0.9rem;
+    margin-top: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #007bff;
+}
+
+.price-breakdown > div {
+    margin: 3px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.total-price {
+    font-weight: bold;
+    color: #007bff;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid #ddd;
+    font-size: 1rem;
+}
+
+/* Phase 2.4: 예약 조회 시스템 스타일 */
+.lookup-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.lookup-method-selector {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.lookup-method-selector h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.method-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.method-btn {
+    flex: 1;
+    max-width: 200px;
+    padding: 20px;
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.method-btn:hover {
+    border-color: #4facfe;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+}
+
+.method-btn.active {
+    border-color: #4facfe;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.method-icon {
+    font-size: 2rem;
+}
+
+.method-info {
+    text-align: left;
+}
+
+.method-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.method-desc {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.lookup-form-container {
+    margin-bottom: 30px;
+}
+
+.lookup-form {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.lookup-form h4 {
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 1.3rem;
+}
+
+.form-description {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.input-help {
+    color: #888;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.account-actions {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.account-actions p {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: #4facfe;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 5px 0;
+}
+
+.link-btn:hover {
+    color: #2196F3;
+}
+
+.my-reservations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.logout-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+}
+
+.reservations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.reservation-item {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #e1e5e9;
+}
+
+.reservation-item.status-pending {
+    border-left-color: #ffc107;
+}
+
+.reservation-item.status-confirmed {
+    border-left-color: #28a745;
+}
+
+.reservation-item.status-cancelled {
+    border-left-color: #dc3545;
+}
+
+.reservation-item.status-completed {
+    border-left-color: #6c757d;
+}
+
+.reservation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.reservation-number {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.reservation-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.reservation-status.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.reservation-status.status-confirmed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.reservation-status.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.reservation-status.status-completed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.reservation-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 80px;
+}
+
+.info-value {
+    color: #333;
+    text-align: right;
+    flex: 1;
+}
+
+.reservation-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e1e5e9;
+    text-align: right;
+}
+
+.no-reservations {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+}
+
+.lookup-result {
+    margin-top: 30px;
+}
+
+.reservation-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.reservation-card .reservation-header {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 20px;
+    margin-bottom: 0;
+}
+
+.reservation-card .reservation-header h5 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.reservation-card .reservation-info {
+    padding: 25px;
+}
+
+.info-section {
+    margin-bottom: 25px;
+}
+
+.info-section:last-child {
+    margin-bottom: 0;
+}
+
+.info-section h6 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1rem;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-item .label {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.info-item .value {
+    font-size: 1rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.special-requests {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    color: #333;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.status-info {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.status-message {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.status-message.pending {
+    background: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.status-message.confirmed {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.status-message.cancelled {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.status-message.completed {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.status-message p {
+    margin: 5px 0;
+}
+
+.result-actions {
+    text-align: center;
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.secondary-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+.secondary-btn:hover {
+    background: #5a6268;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .method-buttons {
+        flex-direction: column;
+    }
+    
+    .method-btn {
+        max-width: none;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .result-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .result-actions .secondary-btn,
+    .result-actions .link-btn {
+        width: 100%;
+        max-width: 250px;
+    }
+}
+
+.weekend-badge {
+    animation: weekendPulse 2s ease-in-out infinite;
+}
+
+/* 계정 연결 상태 배지 */
+.account-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.account-badge.login-account {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.account-badge.simple-profile {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.account-badge.no-account {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.account-badge.unknown {
+    background: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}

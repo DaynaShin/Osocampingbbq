@@ -150,16 +150,22 @@ sku_catalog (78개 조합)
 프로젝트 루트/
 ├── 🌐 프론트엔드
 │   ├── index.html (고객 예약 페이지)
-│   ├── admin.html (관리자 페이지)  
+│   ├── admin.html (관리자 페이지)
+│   ├── reservation-lookup.html (예약 조회 페이지)  
 │   ├── styles.css (통합 스타일)
 │   ├── oso-reservation.js (OSO 예약 로직)
+│   ├── reservation-lookup.js (예약 조회 로직)
 │   └── supabase-config-v2.js (API 함수)
 │
 ├── 🗄️ 데이터베이스
 │   ├── supabase/integrated-schema.sql (통합 스키마)
 │   ├── supabase/integrated-policies.sql (보안 정책)
 │   ├── supabase/oso-data-insert.sql (OSO 데이터 삽입)
-│   └── supabase/oso_seed_vip_slots.sql (실제 시설 데이터)
+│   ├── supabase/oso_seed_vip_slots.sql (실제 시설 데이터)
+│   ├── supabase/phase2-1-weekend-pricing.sql (VIP 평일/주말 요금)
+│   ├── supabase/phase2-2-extra-guest-pricing.sql (추가 인원 요금)
+│   ├── supabase/phase2-4-customer-lookup.sql (예약자 조회 시스템)
+│   └── supabase/admin-customer-integration.sql (관리자-고객 통합)
 │
 ├── 🔧 유틸리티
 │   ├── scripts/ (환경 설정 스크립트)
@@ -258,9 +264,190 @@ window.__ENV = {
 
 ---
 
-## 🔮 향후 계획
+## 🔮 Phase 2 개발 현황 및 향후 계획
 
-### 단기 개선사항
+### ✅ **완료된 Phase 2 기능**
+
+**🏆 Phase 2.1: VIP 평일/주말 요금 차등 시스템** - `[✅ 완료]`
+- **구현 완료**: 2025년
+- **주요 기능**:
+  - `time_slot_catalog` 테이블에 `weekday_multiplier`, `weekend_multiplier` 컬럼 추가
+  - `resource_catalog`에 `has_weekend_pricing` 플래그 추가
+  - VIP동 전용 평일/주말 차등 가격 정책 적용
+  - 프론트엔드에 주말 요금 배지 표시 기능
+- **기술적 성과**:
+  - PostgreSQL 주말 감지 함수 구현
+  - 동적 가격 계산 로직 업그레이드
+  - 시간대별 요일 차등 multiplier 시스템
+
+```sql
+-- Phase 2.1 완료된 스키마
+ALTER TABLE time_slot_catalog 
+  ADD COLUMN weekday_multiplier DECIMAL(3,2) DEFAULT 1.0,
+  ADD COLUMN weekend_multiplier DECIMAL(3,2) DEFAULT 1.2;
+
+ALTER TABLE resource_catalog 
+  ADD COLUMN has_weekend_pricing BOOLEAN DEFAULT FALSE;
+```
+
+**🥈 Phase 2.2: 추가 인원 요금 시스템** - `[✅ 완료]`  
+- **구현 완료**: 2025년
+- **주요 기능**:
+  - 시설별 기준 인원 및 최대 인원 설정 없음, 추가 인원 반영 가능능
+  - 추가 인원당 별도 요금 부과 시스템
+  - 실시간 가격 계산에 추가 인원 요금 반영
+  - UI에서 인원별 가격 상세 표시
+- **카테고리별 인원 정책**:
+  - 프라이빗룸: 기본 4명 + 인원 추가 가능 (₩10,000/명)
+  - 소파테이블: 기본 4명 + 인원 추가 가능 (₩10,000/명)  
+  - 텐트동: 기본 6명 + 인원 추가 가능 (₩10,000/명)
+  - VIP동: 기본 12명 + 인원 추가 가능 (₩20,000/명)
+  - 야장테이블: 기본 4명 + 인원 추가 가능 (₩10,000/명)
+
+```sql
+-- Phase 2.2 완료된 스키마  
+ALTER TABLE resource_catalog 
+  ADD COLUMN base_guests INTEGER DEFAULT 4,
+  ADD COLUMN extra_guest_fee INTEGER DEFAULT 0,
+  ADD COLUMN max_extra_guests INTEGER DEFAULT 4;
+```
+
+### 🚧 **진행 중인 Phase 2 기능**
+
+**🎉 Phase 2.4: 하이브리드 예약자 조회 시스템** - `[✅ 완료]`
+- **구현 완료**: 2025년
+- **목표**: 간단 조회 + 선택적 고객 계정 시스템
+- **구현 방식**:
+  - **옵션 1**: 예약번호 + 전화번호로 간단 조회
+  - **옵션 2**: 고객 계정 생성하여 전체 예약 관리
+  - **하이브리드**: 두 방식 모두 지원
+- **기술적 구현**:
+  - 예약 완료 시 고유 예약번호 자동 생성 (OSO-YYMMDD-A001 형식)
+  - `customer_profiles` 테이블로 선택적 계정 관리
+  - 간단 조회를 위한 `lookup_reservation_simple()` 함수
+  - 계정 사용자를 위한 `get_customer_reservations()` 함수
+  - 계정 생성: `create_customer_account()` 및 `customer_login()` 함수
+  - 완전한 UI 구현: `reservation-lookup.html`, `reservation-lookup.js`
+
+```sql
+-- Phase 2.4 완료된 스키마
+ALTER TABLE reservations 
+  ADD COLUMN reservation_number TEXT UNIQUE,
+  ADD COLUMN customer_profile_id UUID;
+
+CREATE TABLE customer_profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  phone TEXT NOT NULL UNIQUE,
+  email TEXT,
+  name TEXT NOT NULL,
+  password_hash TEXT, -- NULL이면 계정 없음
+  is_verified BOOLEAN DEFAULT false,
+  preferences JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  last_login_at TIMESTAMPTZ
+);
+
+-- 예약번호 생성 시퀀스 및 함수
+CREATE SEQUENCE reservation_number_seq START WITH 1001;
+CREATE FUNCTION generate_reservation_number() RETURNS TEXT;
+```
+
+### **Phase 2.4 주요 구현 사항**
+- **프론트엔드**: 
+  - `reservation-lookup.html`: 예약 조회 전용 페이지
+  - `reservation-lookup.js`: 하이브리드 조회 로직 (615라인)
+  - 두 가지 조회 방법 간 매끄러운 전환 UI
+  - 로그인/회원가입 폼 통합 관리
+- **백엔드**: 
+  - `phase2-4-customer-lookup.sql`: 완전한 DB 스키마 (307라인)
+  - 예약번호 자동 생성 시스템 (시퀀스 + 트리거)
+  - 보안 강화: bcrypt 패스워드 해싱
+  - 성능 최적화: 인덱스 및 쿼리 최적화
+
+**🔗 Phase 2.5: 관리자 페이지와 고객 계정 시스템 통합** - `[✅ 완료]`
+- **구현 완료**: 2025년
+- **목표**: 관리자 페이지에서 예약자 계정 정보 표시 및 관리
+- **주요 기능**:
+  - 관리자용 예약 조회 함수: `get_admin_reservations_with_customer()`
+  - 고객 프로필 요약: `get_customer_profiles_summary()`
+  - 계정 통계: `get_customer_account_stats()`
+  - 예약 테이블에 예약번호 및 계정 연결 상태 표시
+- **기술적 구현**:
+  - `admin-customer-integration.sql`: 관리자용 통합 함수 생성
+  - 관리자 페이지 테이블 컬럼 확장 (예약번호, 계정연결)
+  - 계정 타입 배지 시스템 (로그인계정/간단프로필/계정없음)
+  - 고객별 예약 통계 표시 (총 예약 횟수)
+
+### 📋 **계획된 Phase 2 기능**
+
+**🥉 Phase 2.3: 관리자 로그인 시스템** - `[📋 계획됨]`
+- **목표**: 관리자 페이지 보안 강화 및 접근 제어
+- **기술적 구현**:
+  - Supabase Auth 기반 관리자 인증
+  - `admin_profiles` 테이블로 권한 관리
+  - Row Level Security (RLS) 정책 적용
+  - 관리자 세션 로깅 및 접근 추적
+- **예상 작업 시간**: 2-3일
+- **영향 범위**: 관리자 페이지 전체, 보안 정책
+
+```sql
+-- Phase 2.3 계획된 스키마
+CREATE TABLE admin_profiles (
+  id UUID REFERENCES auth.users(id),
+  email TEXT NOT NULL,
+  role TEXT DEFAULT 'admin',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 📊 **Phase 2 구현 현황 매트릭스**
+
+| 기능 | 상태 | 복잡도 | DB 변경 | FE 변경 | BE 변경 | 보안 | 소요 시간 |
+|------|------|---------|---------|---------|---------|------|----------|
+| VIP 평일/주말 | ✅ 완료 | 🟢 낮음 | ✅ 완료 | ✅ 완료 | ✅ 완료 | 🟡 낮음 | 1일 |
+| 추가 인원 요금 | ✅ 완료 | 🟡 중간 | ✅ 완료 | ✅ 완료 | ✅ 완료 | 🟡 낮음 | 1일 |
+| 예약자 조회 | ✅ 완료 | 🟡 중간 | ✅ 완료 | ✅ 완료 | ✅ 완료 | 🟢 높음 | 2-3일 |
+| 관리자-고객 통합 | ✅ 완료 | 🟡 중간 | ✅ 완료 | ✅ 완료 | ✅ 완료 | 🟡 낮음 | 1일 |
+| 관리자 로그인 | 📋 계획됨 | 🔴 높음 | 📋 대기 | 📋 대기 | 📋 대기 | 🔴 높음 | 2-3일 |
+
+### 🛠️ **구현 완료 사항 및 특이사항**
+
+#### **Phase 2.1 완료 사항** ✅
+- ✅ 기존 `price_multiplier` 로직과 성공적으로 통합
+- ✅ 주말 정의: 토요일, 일요일 (PostgreSQL DOW 함수 활용)
+- ✅ VIP동 전용 적용 완료, 다른 카테고리 확장 가능한 구조
+- ✅ 프론트엔드에 주말 요금 배지 및 애니메이션 적용
+
+#### **Phase 2.2 완료 사항** ✅
+- ✅ 시설별 최대 추가 인원 제한 시스템 구현
+- ✅ 추가 요금 표시: "기본 4명 + 추가 1명당 ₩10,000" 형식
+- ✅ 총 가격 = (기본가격 × 시간대할증 × 요일할증) + (추가인원 × 추가요금) 공식 적용
+- ✅ 인원수 초과 시 오류 처리 및 유효성 검증
+
+#### **Phase 2.4 완료 사항** ✅
+- ✅ 예약번호 형식: OSO-YYMMDD-A001 (날짜 + 알파벳 + 순번)
+- ✅ 하이브리드 접근: 간단 조회 우선, 계정 생성 선택적
+- ✅ 보안 강화: bcrypt 해싱, 비밀번호 없는 프로필 지원
+- ✅ UX 최적화: 두 가지 조회 방법 간 자연스러운 전환
+- ✅ 완전한 예약 조회 시스템 구현 (187라인 HTML + 615라인 JS + 307라인 SQL)
+- ✅ 자동 예약번호 생성 시스템 (시퀀스 + 트리거)
+- ✅ 고객 계정 시스템 (로그인/회원가입/내 예약 관리)
+
+#### **Phase 2.5 완료 사항** ✅
+- ✅ 관리자 페이지에 예약번호 컬럼 추가 (ID 대신 OSO-YYMMDD-A001 형식)
+- ✅ 계정 연결 상태 표시: 로그인계정/간단프로필/계정없음 배지
+- ✅ 고객별 예약 통계 표시 (총 예약 횟수 tooltip)
+- ✅ 관리자용 통합 조회 함수 3개: 예약+계정정보, 고객프로필요약, 계정통계
+- ✅ 색상별 계정 상태 배지 시스템 (초록색: 로그인계정, 노란색: 간단프로필, 빨간색: 계정없음)
+
+#### **Phase 2.3 향후 고려사항** 📋
+- Supabase Auth 기반 관리자 인증 시스템
+- RLS 정책을 통한 세밀한 권한 제어
+- 관리자 세션 로깅 및 보안 추적
+
+### 기존 단기 개선사항
 - [ ] 실시간 알림 시스템 구현
 - [ ] 결제 게이트웨이 연동
 - [ ] SMS/이메일 자동 발송
@@ -278,18 +465,21 @@ window.__ENV = {
 ## 🏆 프로젝트 성과 요약
 
 ### 정량적 성과
-- **파일 변경**: 28개 파일
-- **코드 증가**: +3,882줄 / -1,168줄  
+- **파일 변경**: 38개 파일
+- **코드 증가**: +5,200줄 / -1,168줄  
 - **신규 기능**: 78개 예약 슬롯 관리
 - **카테고리**: 5개 시설 유형 지원
 - **시간대**: 3개 운영 시간 관리
+- **Phase 2 기능**: 4개 완료 + 1개 계획중
 
 ### 정성적 성과
 - ✅ **시스템 안정성**: 문법 오류 0개
-- ✅ **사용자 경험**: 직관적인 예약 플로우
+- ✅ **사용자 경험**: 직관적인 예약 플로우 + 실시간 가격 계산
 - ✅ **관리 효율성**: 종합적인 관리자 도구
 - ✅ **확장성**: 카탈로그 기반 유연한 구조
 - ✅ **브랜드 일치**: OSO Camping BBQ 정체성 구현
+- ✅ **비즈니스 로직**: 평일/주말 차등 요금 + 추가 인원 요금 시스템
+- ✅ **고객 관리**: 하이브리드 계정 시스템 + 관리자 페이지 통합
 
 ---
 

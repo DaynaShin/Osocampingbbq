@@ -348,13 +348,167 @@ async function deleteBooking(id) {
 }
 
 // ===============================
+// Phase 2.4: 고객 계정 및 예약 조회 함수들
+// ===============================
+
+// 간단 예약 조회 (예약번호 + 전화번호)
+async function lookupReservationSimple(reservationNumber, phone) {
+  try {
+    const { data, error } = await supabaseClient.rpc('lookup_reservation_simple', {
+      p_reservation_number: reservationNumber,
+      p_phone: phone
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('간단 예약 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 고객 계정 생성
+async function createCustomerAccount(phone, password, email = null) {
+  try {
+    const { data, error } = await supabaseClient.rpc('create_customer_account', {
+      p_phone: phone,
+      p_password: password,
+      p_email: email
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('고객 계정 생성 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 고객 로그인
+async function customerLogin(phone, password) {
+  try {
+    const { data, error } = await supabaseClient.rpc('customer_login', {
+      p_phone: phone,
+      p_password: password
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('고객 로그인 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 고객의 모든 예약 조회
+async function getCustomerReservations(customerId) {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_customer_reservations', {
+      p_customer_id: customerId
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('고객 예약 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ===============================
 // 유틸리티 함수들
 // ===============================
 
-// 요금 계산 (기본요금 × 시간대 할증 × 인원수 등)
+// 주말 여부 확인 함수 (토요일, 일요일)
+function isWeekend(date) {
+  const day = new Date(date).getDay();
+  return day === 0 || day === 6; // 일요일(0), 토요일(6)
+}
+
+// 요일별 multiplier 계산
+function getTimeSlotMultiplier(timeSlotData, reservationDate, hasWeekendPricing = false) {
+  if (!hasWeekendPricing) {
+    // 주말 가격 정책이 없는 경우 기본 multiplier 사용
+    return timeSlotData.price_multiplier || 1.0;
+  }
+  
+  // VIP동 등 주말 가격 정책이 있는 경우
+  if (isWeekend(reservationDate)) {
+    return timeSlotData.weekend_multiplier || timeSlotData.price_multiplier || 1.2;
+  } else {
+    return timeSlotData.weekday_multiplier || timeSlotData.price_multiplier || 1.0;
+  }
+}
+
+// Supabase 함수 호출 (추가 인원 요금 계산)
+async function calculateTotalPriceWithGuests(resourceCode, timeSlotCode, reservationDate, guestCount = 1) {
+  try {
+    const { data, error } = await supabaseClient.rpc('calculate_total_price_with_guests', {
+      p_resource_code: resourceCode,
+      p_time_slot_code: timeSlotCode,
+      p_reservation_date: reservationDate,
+      p_guest_count: guestCount
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('추가 인원 요금 계산 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 요금 계산 (기본요금 × 시간대 할증 × 요일 할증)
 function calculateTotalPrice(basePrice, priceMultiplier = 1.0, guestCount = 1, additionalFees = 0) {
   const adjustedPrice = Math.round(basePrice * priceMultiplier);
   return adjustedPrice + additionalFees;
+}
+
+// 동적 가격 계산 (추가 인원 요금 포함)
+function calculateDynamicPrice(resourceData, timeSlotData, reservationDate, guestCount = 1) {
+  const basePrice = resourceData.price || 0;
+  const baseGuests = resourceData.base_guests || 4;
+  const extraGuestFee = resourceData.extra_guest_fee || 0;
+  const maxExtraGuests = resourceData.max_extra_guests || 0;
+  const maxGuests = baseGuests + maxExtraGuests;
+  const hasWeekendPricing = resourceData.has_weekend_pricing || false;
+  
+  // 인원수 유효성 검증
+  if (guestCount > maxGuests) {
+    throw new Error(`최대 수용 인원을 초과했습니다. (최대: ${maxGuests}명)`);
+  }
+  
+  // 시간대별 multiplier (평일/주말 구분)
+  const timeMultiplier = getTimeSlotMultiplier(timeSlotData, reservationDate, hasWeekendPricing);
+  
+  // 기본 가격 계산 (기본 인원까지)
+  const baseTotal = Math.round(basePrice * timeMultiplier);
+  
+  // 추가 인원 계산
+  const extraGuests = Math.max(0, guestCount - baseGuests);
+  const extraGuestsFee = extraGuests * extraGuestFee;
+  
+  // 최종 가격
+  const finalPrice = baseTotal + extraGuestsFee;
+  
+  return {
+    basePrice,
+    timeMultiplier,
+    baseTotal,
+    baseGuests,
+    guestCount,
+    extraGuests,
+    extraGuestFeePerPerson: extraGuestFee,
+    extraGuestsFeeTotal: extraGuestsFee,
+    finalPrice,
+    maxGuests,
+    isWeekendRate: hasWeekendPricing && isWeekend(reservationDate),
+    priceBreakdown: {
+      baseFacility: baseTotal,
+      extraGuests: extraGuestsFee,
+      total: finalPrice
+    }
+  };
 }
 
 // 카테고리명 한글 변환
@@ -394,6 +548,54 @@ window.updateReservation = updateReservation;
 window.deleteReservation = deleteReservation;
 window.confirmReservation = confirmReservation;
 
+// ===============================
+// 관리자용 고객 계정 연동 함수들
+// ===============================
+
+// 관리자용 예약 조회 (계정 정보 포함)
+async function getAdminReservationsWithCustomer() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_admin_reservations_with_customer');
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('관리자용 예약 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 고객 프로필 요약 조회
+async function getCustomerProfilesSummary() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_customer_profiles_summary');
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('고객 프로필 요약 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 고객 계정 통계 조회
+async function getCustomerAccountStats() {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_customer_account_stats');
+    
+    if (error) throw error;
+    return { success: true, data: data[0] };
+  } catch (error) {
+    console.error('고객 계정 통계 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 관리자용 고객 계정 연동 함수들 노출
+window.getAdminReservationsWithCustomer = getAdminReservationsWithCustomer;
+window.getCustomerProfilesSummary = getCustomerProfilesSummary;
+window.getCustomerAccountStats = getCustomerAccountStats;
+
 // 예약 현황 함수
 window.getBookings = getBookings;
 window.getBookingById = getBookingById;
@@ -403,5 +605,15 @@ window.deleteBooking = deleteBooking;
 
 // 유틸리티 함수
 window.calculateTotalPrice = calculateTotalPrice;
+window.calculateTotalPriceWithGuests = calculateTotalPriceWithGuests;
+window.calculateDynamicPrice = calculateDynamicPrice;
+window.isWeekend = isWeekend;
+window.getTimeSlotMultiplier = getTimeSlotMultiplier;
 window.getCategoryDisplayName = getCategoryDisplayName;
 window.formatTimeSlot = formatTimeSlot;
+
+// Phase 2.4: 고객 계정 관리 함수
+window.lookupReservationSimple = lookupReservationSimple;
+window.createCustomerAccount = createCustomerAccount;
+window.customerLogin = customerLogin;
+window.getCustomerReservations = getCustomerReservations;

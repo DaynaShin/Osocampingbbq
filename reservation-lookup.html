@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 조회 - OSO Camping BBQ</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏕️ OSO Camping BBQ</h1>
+            <p>예약 조회 시스템</p>
+        </header>
+
+        <main>
+            <div class="lookup-container">
+                <!-- 조회 방법 선택 -->
+                <div class="lookup-method-selector">
+                    <h3>예약 조회 방법을 선택하세요</h3>
+                    <div class="method-buttons">
+                        <button type="button" class="method-btn active" id="simpleMethodBtn">
+                            <div class="method-icon">🔍</div>
+                            <div class="method-info">
+                                <div class="method-title">간단 조회</div>
+                                <div class="method-desc">예약번호 + 전화번호</div>
+                            </div>
+                        </button>
+                        <button type="button" class="method-btn" id="accountMethodBtn">
+                            <div class="method-icon">👤</div>
+                            <div class="method-info">
+                                <div class="method-title">계정 로그인</div>
+                                <div class="method-desc">모든 예약 내역 관리</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 간단 조회 폼 -->
+                <div class="lookup-form-container" id="simpleLookupContainer">
+                    <form id="simpleLookupForm" class="lookup-form">
+                        <h4>예약 번호로 조회하기</h4>
+                        <p class="form-description">예약 완료 시 받으신 예약번호와 예약 시 입력하신 전화번호를 입력해주세요.</p>
+                        
+                        <div class="form-group">
+                            <label for="reservation_number">예약번호 *</label>
+                            <input type="text" id="reservation_number" name="reservation_number" 
+                                   placeholder="OSO-250905-A001" pattern="OSO-[0-9]{6}-[A-Z][0-9]{3}" required>
+                            <small class="input-help">예: OSO-250905-A001 형식</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lookup_phone">전화번호 *</label>
+                            <input type="tel" id="lookup_phone" name="lookup_phone" 
+                                   placeholder="010-1234-5678" required>
+                        </div>
+
+                        <button type="submit" class="submit-btn">
+                            <span class="btn-text">예약 조회하기</span>
+                            <span class="btn-loader" style="display: none;">조회 중...</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 계정 로그인 폼 -->
+                <div class="lookup-form-container" id="accountLookupContainer" style="display: none;">
+                    <!-- 로그인 폼 -->
+                    <div id="loginFormContainer">
+                        <form id="loginForm" class="lookup-form">
+                            <h4>계정으로 로그인하기</h4>
+                            <p class="form-description">등록된 계정으로 로그인하여 모든 예약 내역을 확인하세요.</p>
+                            
+                            <div class="form-group">
+                                <label for="login_phone">전화번호 *</label>
+                                <input type="tel" id="login_phone" name="login_phone" 
+                                       placeholder="010-1234-5678" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="login_password">비밀번호 *</label>
+                                <input type="password" id="login_password" name="login_password" 
+                                       placeholder="비밀번호" required>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <span class="btn-text">로그인</span>
+                                <span class="btn-loader" style="display: none;">로그인 중...</span>
+                            </button>
+                        </form>
+
+                        <div class="account-actions">
+                            <p>아직 계정이 없으신가요?</p>
+                            <button type="button" class="link-btn" id="showSignupBtn">계정 만들기</button>
+                        </div>
+                    </div>
+
+                    <!-- 회원가입 폼 -->
+                    <div id="signupFormContainer" style="display: none;">
+                        <form id="signupForm" class="lookup-form">
+                            <h4>계정 만들기</h4>
+                            <p class="form-description">계정을 만들면 모든 예약을 편리하게 관리할 수 있습니다.</p>
+                            
+                            <div class="form-group">
+                                <label for="signup_phone">전화번호 *</label>
+                                <input type="tel" id="signup_phone" name="signup_phone" 
+                                       placeholder="010-1234-5678" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="signup_email">이메일</label>
+                                <input type="email" id="signup_email" name="signup_email" 
+                                       placeholder="your@email.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="signup_password">비밀번호 *</label>
+                                <input type="password" id="signup_password" name="signup_password" 
+                                       placeholder="6자리 이상" minlength="6" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">비밀번호 확인 *</label>
+                                <input type="password" id="confirm_password" name="confirm_password" 
+                                       placeholder="비밀번호 재입력" required>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <span class="btn-text">계정 만들기</span>
+                                <span class="btn-loader" style="display: none;">생성 중...</span>
+                            </button>
+                        </form>
+
+                        <div class="account-actions">
+                            <p>이미 계정이 있으신가요?</p>
+                            <button type="button" class="link-btn" id="showLoginBtn">로그인하기</button>
+                        </div>
+                    </div>
+
+                    <!-- 로그인 후 내 예약 목록 -->
+                    <div id="myReservationsContainer" style="display: none;">
+                        <div class="my-reservations-header">
+                            <h4>내 예약 내역</h4>
+                            <button type="button" class="logout-btn" id="logoutBtn">로그아웃</button>
+                        </div>
+                        <div id="reservationsList" class="reservations-list">
+                            <!-- JavaScript로 동적 생성 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 조회 결과 표시 -->
+                <div class="lookup-result" id="lookupResult" style="display: none;">
+                    <h4>예약 정보</h4>
+                    <div id="reservationDetails" class="reservation-details">
+                        <!-- JavaScript로 동적 생성 -->
+                    </div>
+                    <div class="result-actions">
+                        <button type="button" class="secondary-btn" id="newLookupBtn">다른 예약 조회</button>
+                        <button type="button" class="link-btn" id="createAccountBtn">이 전화번호로 계정 만들기</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 성공/오류 메시지 -->
+            <div id="messageContainer" class="message-container" style="display: none;">
+                <div id="messageContent" class="message"></div>
+                <button id="closeMessage" class="close-btn" aria-label="close">×</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 OSO Camping BBQ. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="index.html">예약하기</a> |
+                <a href="reservation-lookup.html">예약조회</a> |
+                <a href="admin.html">관리자</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript 파일들 -->
+    <script src="env.js"></script>
+    <script src="supabase-config-v2.js"></script>
+    <script src="reservation-lookup.js"></script>
+</body>
+</html>

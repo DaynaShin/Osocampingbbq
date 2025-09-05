@@ -268,16 +268,41 @@ async function updateVenueSelection(date, guestCount) {
             Object.entries(timeSlots).forEach(([timeName, slots]) => {
                 const firstSlot = slots[0];
                 const timeRange = formatTimeSlot(firstSlot.start_local, firstSlot.end_local);
-                const price = calculateTotalPrice(firstSlot.base_price, firstSlot.time_slot_catalog?.price_multiplier || 1.0);
+                // 새로운 동적 가격 계산 (추가 인원 요금 포함)
+                const resourceData = {
+                    price: firstSlot.base_price,
+                    base_guests: firstSlot.base_guests || 4,
+                    extra_guest_fee: firstSlot.extra_guest_fee || 0,
+                    max_extra_guests: firstSlot.max_extra_guests || 0,
+                    has_weekend_pricing: firstSlot.has_weekend_pricing || false
+                };
+                const timeSlotData = {
+                    price_multiplier: firstSlot.time_slot_catalog?.price_multiplier || 1.0,
+                    weekday_multiplier: firstSlot.time_slot_catalog?.weekday_multiplier || 1.0,
+                    weekend_multiplier: firstSlot.time_slot_catalog?.weekend_multiplier || 1.2
+                };
+                
+                const priceInfo = calculateDynamicPrice(resourceData, timeSlotData, selectedDate, guestCount);
+                const price = priceInfo.finalPrice;
+                
+                // 인원 정보 표시
+                const guestInfo = guestCount <= resourceData.base_guests ? 
+                    `${guestCount}명` : 
+                    `${guestCount}명 (기본 ${resourceData.base_guests}명 + 추가 ${priceInfo.extraGuests}명)`;
+                
+                // 주말 요금 표시 여부
+                const weekendBadge = priceInfo.isWeekendRate ? '<span class="weekend-badge">주말요금</span>' : '';
                 
                 gridHTML += `
-                    <div class="time-slot-card" onclick="selectTimeSlot('${categoryCode}', '${timeName}', '${timeRange}', ${price})">
+                    <div class="time-slot-card" onclick="selectTimeSlot('${categoryCode}', '${timeName}', '${timeRange}', ${JSON.stringify(priceInfo).replace(/"/g, '&quot;')})">
                         <div class="time-info">
                             <div class="time-range">${timeRange}</div>
                             <div class="time-name">${timeName}</div>
                         </div>
                         <div class="price-info">
-                            <div class="price">₩${price.toLocaleString()}</div>
+                            <div class="guest-info">${guestInfo}</div>
+                            <div class="price">₩${price.toLocaleString()} ${weekendBadge}</div>
+                            ${priceInfo.extraGuests > 0 ? `<div class="extra-fee-info">추가 인원: ₩${priceInfo.extraGuestsFeeTotal.toLocaleString()}</div>` : ''}
                             <div class="available">${slots.length}개 가능</div>
                         </div>
                     </div>
@@ -300,7 +325,7 @@ async function updateVenueSelection(date, guestCount) {
 }
 
 // 시간 슬롯 선택
-function selectTimeSlot(categoryCode, timeName, timeRange, price) {
+function selectTimeSlot(categoryCode, timeName, timeRange, price, isWeekendRate = false) {
     // 기존 선택 해제
     document.querySelectorAll('.time-slot-card.selected').forEach(card => {
         card.classList.remove('selected');
@@ -314,7 +339,8 @@ function selectTimeSlot(categoryCode, timeName, timeRange, price) {
         categoryCode,
         timeName,
         timeRange,
-        price
+        price,
+        isWeekendRate
     };
     
     // 선택된 정보 표시
@@ -326,16 +352,42 @@ function updateSelectedVenueInfo() {
     const infoContent = document.getElementById('venueInfoContent');
     
     if (selectedSku && selectedDate) {
-        const guestCount = document.getElementById('guest_count').value;
+        const guestCount = parseInt(document.getElementById('guest_count').value);
         const categoryName = getCategoryDisplayName(selectedSku.categoryCode);
+        const priceInfo = selectedSku.priceInfo;
+        
+        const weekendBadge = priceInfo.isWeekendRate ? '<span class="weekend-badge">주말요금</span>' : '';
+        const dateInfo = new Date(selectedDate);
+        const isWeekendDate = isWeekend(selectedDate);
+        const dayInfo = isWeekendDate ? ' (주말)' : ' (평일)';
+        
+        // 인원 정보 표시
+        const guestDisplay = guestCount <= priceInfo.baseGuests ? 
+            `${guestCount}명` : 
+            `${guestCount}명 (기본 ${priceInfo.baseGuests}명 + 추가 ${priceInfo.extraGuests}명)`;
+        
+        // 가격 상세 정보
+        let priceDetail = '';
+        if (priceInfo.extraGuests > 0) {
+            priceDetail = `
+                <div class="price-breakdown">
+                    <div>기본 요금: ₩${priceInfo.baseTotal.toLocaleString()}</div>
+                    <div>추가 인원 요금: ₩${priceInfo.extraGuestsFeeTotal.toLocaleString()} (${priceInfo.extraGuests}명 × ₩${priceInfo.extraGuestFeePerPerson.toLocaleString()})</div>
+                    <div class="total-price"><strong>총 요금: ₩${priceInfo.finalPrice.toLocaleString()} ${weekendBadge}</strong></div>
+                </div>
+            `;
+        } else {
+            priceDetail = `<div class="price-detail"><strong>예상 요금:</strong> ₩${priceInfo.finalPrice.toLocaleString()} ${weekendBadge}</div>`;
+        }
         
         infoContent.innerHTML = `
             <div class="venue-detail">
-                <div><strong>예약 날짜:</strong> ${new Date(selectedDate).toLocaleDateString('ko-KR')}</div>
+                <div><strong>예약 날짜:</strong> ${dateInfo.toLocaleDateString('ko-KR')}${dayInfo}</div>
                 <div><strong>장소 유형:</strong> ${categoryName}</div>
                 <div><strong>시간:</strong> ${selectedSku.timeRange} (${selectedSku.timeName})</div>
-                <div><strong>인원:</strong> ${guestCount}명</div>
-                <div class="price-detail"><strong>예상 요금:</strong> ₩${selectedSku.price.toLocaleString()}</div>
+                <div><strong>인원:</strong> ${guestDisplay}</div>
+                ${priceDetail}
+                ${priceInfo.isWeekendRate ? '<div class="weekend-notice">※ 주말 할증요금이 적용됩니다.</div>' : ''}
             </div>
         `;
         
@@ -381,8 +433,16 @@ async function handleFormSubmit(event) {
         
         const result = await createReservation(reservationData);
         
-        if (result.success) {
-            showMessage('예약 신청이 완료되었습니다! 확인 후 연락드리겠습니다.', 'success');
+        if (result.success && result.data && result.data[0]) {
+            const reservation = result.data[0];
+            const reservationNumber = reservation.reservation_number;
+            
+            if (reservationNumber) {
+                showMessage(`예약 신청이 완료되었습니다! 예약번호: ${reservationNumber}\n(예약번호와 전화번호로 예약 조회가 가능합니다)`, 'success');
+            } else {
+                showMessage('예약 신청이 완료되었습니다! 확인 후 연락드리겠습니다.', 'success');
+            }
+            
             event.target.reset();
             resetForm();
         } else {
