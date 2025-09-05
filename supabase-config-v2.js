@@ -596,6 +596,297 @@ window.getAdminReservationsWithCustomer = getAdminReservationsWithCustomer;
 window.getCustomerProfilesSummary = getCustomerProfilesSummary;
 window.getCustomerAccountStats = getCustomerAccountStats;
 
+// ===============================
+// Phase 3.1: 실시간 알림 시스템
+// ===============================
+
+// 실시간 알림 시스템 클래스
+class RealtimeNotificationSystem {
+  constructor() {
+    this.isInitialized = false;
+    this.channels = new Map();
+    this.onNotificationHandlers = new Set();
+    this.unreadCount = 0;
+    this.notifications = [];
+  }
+
+  // 초기화
+  async initialize(recipientType = 'admin', recipientId = 'admin') {
+    if (this.isInitialized) return;
+
+    this.recipientType = recipientType;
+    this.recipientId = recipientId;
+
+    try {
+      // 기존 알림 불러오기
+      await this.loadExistingNotifications();
+
+      // Realtime 채널 구독
+      this.subscribeToNotifications();
+
+      // 브라우저 알림 권한 요청
+      await this.requestNotificationPermission();
+
+      this.isInitialized = true;
+      console.log('실시간 알림 시스템 초기화 완료');
+    } catch (error) {
+      console.error('알림 시스템 초기화 오류:', error);
+    }
+  }
+
+  // 기존 알림 불러오기
+  async loadExistingNotifications() {
+    try {
+      let result;
+      if (this.recipientType === 'admin') {
+        result = await getAdminNotifications();
+      } else {
+        result = await getCustomerNotifications(this.recipientId);
+      }
+
+      if (result.success) {
+        this.notifications = result.data || [];
+        this.unreadCount = this.notifications.filter(n => !n.is_read).length;
+        this.notifyHandlers('initialized', { notifications: this.notifications, unreadCount: this.unreadCount });
+      }
+    } catch (error) {
+      console.error('기존 알림 로드 오류:', error);
+    }
+  }
+
+  // Realtime 채널 구독
+  subscribeToNotifications() {
+    const channel = supabaseClient
+      .channel('notifications-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_type=eq.${this.recipientType}${this.recipientType === 'customer' ? `AND recipient_id=eq.${this.recipientId}` : ''}`
+        },
+        (payload) => {
+          console.log('새 알림 수신:', payload);
+          this.handleNewNotification(payload.new);
+        }
+      )
+      .subscribe();
+
+    this.channels.set('notifications', channel);
+  }
+
+  // 새 알림 처리
+  handleNewNotification(notification) {
+    // 알림 목록에 추가 (맨 앞에)
+    this.notifications.unshift(notification);
+    
+    // 읽지 않은 알림 수 증가
+    if (!notification.is_read) {
+      this.unreadCount++;
+    }
+
+    // 브라우저 알림 표시
+    this.showBrowserNotification(notification);
+
+    // 핸들러들에게 알림
+    this.notifyHandlers('newNotification', { 
+      notification, 
+      notifications: this.notifications,
+      unreadCount: this.unreadCount 
+    });
+  }
+
+  // 브라우저 알림 권한 요청
+  async requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      console.warn('이 브라우저는 알림을 지원하지 않습니다.');
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  // 브라우저 알림 표시
+  showBrowserNotification(notification) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+
+    const options = {
+      body: notification.message,
+      icon: '/favicon.ico', // 사이트 아이콘
+      badge: '/favicon.ico',
+      tag: `notification-${notification.id}`,
+      requireInteraction: notification.priority === 'urgent' || notification.priority === 'high',
+      silent: notification.priority === 'low'
+    };
+
+    const browserNotification = new Notification(notification.title, options);
+    
+    // 클릭 시 해당 예약으로 이동
+    browserNotification.onclick = () => {
+      window.focus();
+      if (notification.reservation_number) {
+        // 예약 조회 페이지로 이동하거나 모달 표시
+        this.notifyHandlers('notificationClicked', { notification });
+      }
+      browserNotification.close();
+    };
+
+    // 5초 후 자동 닫기 (urgent/high 제외)
+    if (notification.priority !== 'urgent' && notification.priority !== 'high') {
+      setTimeout(() => browserNotification.close(), 5000);
+    }
+  }
+
+  // 알림 읽음 처리
+  async markAsRead(notificationId) {
+    try {
+      const result = await markNotificationAsRead(notificationId);
+      if (result.success) {
+        // 로컬 상태 업데이트
+        const notification = this.notifications.find(n => n.id === notificationId);
+        if (notification && !notification.is_read) {
+          notification.is_read = true;
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+          
+          this.notifyHandlers('notificationRead', { 
+            notificationId,
+            unreadCount: this.unreadCount 
+          });
+        }
+      }
+      return result;
+    } catch (error) {
+      console.error('알림 읽음 처리 오류:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // 모든 알림 읽음 처리
+  async markAllAsRead() {
+    const unreadIds = this.notifications
+      .filter(n => !n.is_read)
+      .map(n => n.id);
+
+    for (const id of unreadIds) {
+      await this.markAsRead(id);
+    }
+  }
+
+  // 이벤트 핸들러 등록
+  onNotification(handler) {
+    this.onNotificationHandlers.add(handler);
+    return () => this.onNotificationHandlers.delete(handler);
+  }
+
+  // 핸들러들에게 이벤트 알림
+  notifyHandlers(eventType, data) {
+    this.onNotificationHandlers.forEach(handler => {
+      try {
+        handler(eventType, data);
+      } catch (error) {
+        console.error('알림 핸들러 오류:', error);
+      }
+    });
+  }
+
+  // 정리
+  cleanup() {
+    this.channels.forEach(channel => {
+      supabaseClient.removeChannel(channel);
+    });
+    this.channels.clear();
+    this.onNotificationHandlers.clear();
+    this.isInitialized = false;
+  }
+
+  // 상태 정보 반환
+  getState() {
+    return {
+      isInitialized: this.isInitialized,
+      unreadCount: this.unreadCount,
+      notifications: this.notifications,
+      recipientType: this.recipientType,
+      recipientId: this.recipientId
+    };
+  }
+}
+
+// 싱글톤 인스턴스
+const notificationSystem = new RealtimeNotificationSystem();
+
+// 고객용 알림 조회
+async function getCustomerNotifications(phone, limit = 20) {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_customer_notifications', {
+      p_phone: phone,
+      p_limit: limit
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('고객 알림 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 관리자용 알림 조회
+async function getAdminNotifications(limit = 50) {
+  try {
+    const { data, error } = await supabaseClient.rpc('get_admin_notifications', {
+      p_limit: limit
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('관리자 알림 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 알림 읽음 상태 업데이트
+async function markNotificationAsRead(notificationId) {
+  try {
+    const { data, error } = await supabaseClient.rpc('mark_notification_as_read', {
+      p_notification_id: notificationId
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('알림 읽음 처리 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 테스트용 알림 생성
+async function createTestNotification(type = 'test', recipientType = 'admin') {
+  try {
+    const { data, error } = await supabaseClient.rpc('create_test_notification', {
+      p_type: type,
+      p_recipient_type: recipientType
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('테스트 알림 생성 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 실시간 알림 시스템 노출
+window.notificationSystem = notificationSystem;
+window.getCustomerNotifications = getCustomerNotifications;
+window.getAdminNotifications = getAdminNotifications;
+window.markNotificationAsRead = markNotificationAsRead;
+window.createTestNotification = createTestNotification;
+
 // 예약 현황 함수
 window.getBookings = getBookings;
 window.getBookingById = getBookingById;
