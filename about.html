@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OSO Camping BBQ 소개 - 자연과 함께하는 특별한 캠핑과 BBQ 체험 공간의 이야기와 시설을 소개합니다.">
+    <meta name="keywords" content="캠핑장 소개, BBQ 체험, 가족캠핑, 친구모임, 자연체험, OSO 소개">
+    
+    <title>소개 - OSO Camping BBQ</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏕️</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        /* 소개 페이지 전용 스타일 */
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --accent-color: #667eea;
+            --dark-color: #2d3748;
+            --gray-color: #718096;
+            --light-gray: #f7fafc;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background: white;
+            padding-top: 80px; /* 네비게이션 높이만큼 */
+        }
+        
+        /* 네비게이션 (home.html과 동일) */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 0;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: var(--dark-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background: rgba(79, 172, 254, 0.1);
+        }
+        
+        .nav-cta {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+        }
+        
+        /* 히어로 섹션 */
+        .hero {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)),
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%234facfe" stop-opacity="0.1"/><stop offset="100%" stop-color="%23667eea" stop-opacity="0.2"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23bg)"/></svg>');
+            color: white;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="%23ffffff20"/><circle cx="80" cy="40" r="1.5" fill="%23ffffff15"/><circle cx="40" cy="80" r="1" fill="%23ffffff25"/><circle cx="60" cy="30" r="0.8" fill="%23ffffff20"/></svg>') repeat;
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.3rem);
+            opacity: 0.9;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* 메인 콘텐츠 */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .section {
+            padding: 4rem 0;
+        }
+        
+        .section-title {
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            margin-bottom: 2rem;
+            color: var(--dark-color);
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        /* 스토리 섹션 */
+        .story-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+        
+        .story-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .story-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--gray-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .story-image {
+            height: 300px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .story-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="30" cy="30" r="2" fill="%23ffffff15"/><circle cx="70" cy="60" r="3" fill="%23ffffff10"/><circle cx="20" cy="80" r="1" fill="%23ffffff20"/></svg>') repeat;
+            opacity: 0.5;
+        }
+        
+        /* 가치 섹션 */
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .value-card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(79, 172, 254, 0.1);
+        }
+        
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-color: var(--primary-color);
+        }
+        
+        .value-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        }
+        
+        .value-card h4 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .value-card p {
+            color: var(--gray-color);
+            line-height: 1.6;
+        }
+        
+        /* 시설 상세 섹션 */
+        .facilities-detail {
+            background: var(--light-gray);
+            padding: 4rem 0;
+            margin: 4rem -2rem;
+            border-radius: 0;
+        }
+        
+        .facilities-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .facility-detail {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 0;
+        }
+        
+        .facility-image-small {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+        
+        .facility-info {
+            padding: 2rem;
+        }
+        
+        .facility-info h4 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .facility-subtitle {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        
+        .facility-description {
+            color: var(--gray-color);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .facility-specs {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .spec-item {
+            background: var(--light-gray);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* 팀 섹션 */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .team-member {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        
+        .member-avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        }
+        
+        .member-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .member-role {
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        
+        .member-description {
+            color: var(--gray-color);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        /* CTA 섹션 */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            text-align: center;
+            padding: 4rem 2rem;
+            border-radius: 20px;
+            margin: 4rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon fill="%23ffffff10" points="0,0 100,0 80,100 0,50"/></svg>') repeat;
+            opacity: 0.3;
+        }
+        
+        .cta-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .cta-title {
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .cta-description {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-white {
+            background: white;
+            color: var(--primary-color);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 푸터 */
+        .footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 3rem 2rem 2rem;
+            margin-top: 4rem;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .footer-section p,
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .footer-section a:hover {
+            color: var(--primary-color);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .hero {
+                padding: 4rem 1rem 3rem;
+            }
+            
+            .main-content {
+                padding: 0 1rem;
+            }
+            
+            .story-section {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                text-align: center;
+            }
+            
+            .facility-detail {
+                grid-template-columns: 1fr;
+            }
+            
+            .facility-image-small {
+                height: 200px;
+            }
+            
+            .facilities-detail {
+                margin: 4rem -1rem;
+                padding: 3rem 1rem;
+            }
+            
+            .values-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .team-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .cta-section {
+                margin: 3rem -1rem;
+                border-radius: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-container {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 3rem 0;
+            }
+            
+            .value-card,
+            .team-member {
+                padding: 2rem 1rem;
+            }
+        }
+        
+        /* 애니메이션 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fadeInUp {
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        /* 스크롤 부드럽게 */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="logo">
+                <span class="logo-icon">🏕️</span>
+                OSO Camping BBQ
+            </a>
+            
+            <ul class="nav-menu">
+                <li><a href="home.html" class="nav-link">홈</a></li>
+                <li><a href="about.html" class="nav-link active">소개</a></li>
+                <li><a href="contact.html" class="nav-link">연락처</a></li>
+                <li><a href="reservation-lookup.html" class="nav-link">예약조회</a></li>
+                <li><a href="index.html" class="nav-link nav-cta">예약하기</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- 히어로 섹션 -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>OSO Camping BBQ</h1>
+            <p class="hero-subtitle">
+                자연과 함께하는 특별한 순간들을 만들어가는<br>
+                프리미엄 캠핑 & BBQ 체험 공간입니다
+            </p>
+        </div>
+    </section>
+    
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+        <!-- 스토리 섹션 -->
+        <section class="section">
+            <div class="story-section">
+                <div class="story-content animate-fadeInUp">
+                    <h3>자연 속에서 시작된 이야기</h3>
+                    <p>
+                        OSO Camping BBQ는 도시의 번잡함을 벗어나 자연 속에서 진정한 휴식과 즐거움을 찾고자 하는 
+                        사람들의 마음에서 시작되었습니다.
+                    </p>
+                    <p>
+                        우리는 단순히 캠핑장을 운영하는 것이 아니라, 소중한 사람들과 함께하는 특별한 추억을 
+                        만들어드리는 공간을 제공하고자 합니다.
+                    </p>
+                </div>
+                <div class="story-image animate-fadeInUp">
+                    🌿
+                </div>
+            </div>
+            
+            <div class="story-section">
+                <div class="story-image animate-fadeInUp">
+                    🔥
+                </div>
+                <div class="story-content animate-fadeInUp">
+                    <h3>완벽한 BBQ 체험</h3>
+                    <p>
+                        전문가가 엄선한 최고급 그릴 시설과 조리 도구들로 누구나 쉽게 맛있는 BBQ를 즐기실 수 있습니다.
+                        초보자부터 숙련자까지, 모든 분들이 만족할 수 있는 완벽한 환경을 제공합니다.
+                    </p>
+                    <p>
+                        신선한 식재료부터 양념, 조리법까지 모든 것을 준비해드려 여러분은 오직 즐기는 것에만 
+                        집중하실 수 있습니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 가치 섹션 -->
+        <section class="section">
+            <h2 class="section-title">OSO만의 가치</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">🌱</div>
+                    <h4>자연 친화적</h4>
+                    <p>환경을 생각하는 지속가능한 캠핑 문화를 만들어갑니다. 자연과 조화를 이루며 최소한의 환경 부담으로 최대한의 즐거움을 제공합니다.</p>
+                </div>
+                
+                <div class="value-card">
+                    <div class="value-icon">❤️</div>
+                    <h4>따뜻한 배려</h4>
+                    <p>모든 고객을 가족처럼 생각하며 세심한 배려와 정성스러운 서비스로 편안하고 따뜻한 경험을 선사합니다.</p>
+                </div>
+                
+                <div class="value-card">
+                    <div class="value-icon">⭐</div>
+                    <h4>품질 보장</h4>
+                    <p>최고 품질의 시설과 서비스만을 제공합니다. 철저한 품질 관리를 통해 언제나 일정한 수준의 만족을 보장합니다.</p>
+                </div>
+                
+                <div class="value-card">
+                    <div class="value-icon">🤝</div>
+                    <h4>소통과 공감</h4>
+                    <p>고객의 소리에 귀 기울이고 지속적으로 개선해나갑니다. 여러분의 피드백이 더 나은 OSO를 만들어갑니다.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 시설 상세 섹션 -->
+        <div class="facilities-detail">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+                <h2 class="section-title" style="color: var(--dark-color);">다양한 시설 안내</h2>
+                
+                <div class="facilities-grid">
+                    <div class="facility-detail">
+                        <div class="facility-image-small" style="background: linear-gradient(135deg, #48bb78, #38a169);">
+                            🏠
+                        </div>
+                        <div class="facility-info">
+                            <div class="facility-subtitle">Private Room</div>
+                            <h4>프라이빗룸 (PR01-PR06)</h4>
+                            <p class="facility-description">
+                                완전한 개인 공간에서 프라이버시를 보장받으며 편안한 캠핑을 즐기실 수 있습니다. 
+                                가족이나 연인과의 특별한 시간을 위한 최적의 선택입니다.
+                            </p>
+                            <div class="facility-specs">
+                                <span class="spec-item">👥 기본 4명</span>
+                                <span class="spec-item">➕ 추가 인원 가능</span>
+                                <span class="spec-item">🔒 완전 독립 공간</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="facility-detail">
+                        <div class="facility-image-small" style="background: linear-gradient(135deg, #805ad5, #6b46c1);">
+                            💎
+                        </div>
+                        <div class="facility-info">
+                            <div class="facility-subtitle">VIP Zone</div>
+                            <h4>VIP동 (VP01-VP04)</h4>
+                            <p class="facility-description">
+                                최고급 시설과 프리미엄 서비스로 특별한 날을 더욱 특별하게 만들어드립니다. 
+                                대규모 모임이나 중요한 행사에 완벽한 공간입니다.
+                            </p>
+                            <div class="facility-specs">
+                                <span class="spec-item">👥 기본 12명</span>
+                                <span class="spec-item">💰 주말 할증 요금</span>
+                                <span class="spec-item">⭐ 프리미엄 서비스</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="facility-detail">
+                        <div class="facility-image-small" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                            ⛺
+                        </div>
+                        <div class="facility-info">
+                            <div class="facility-subtitle">Tent Zone</div>
+                            <h4>텐트동 (TN01-TN08)</h4>
+                            <p class="facility-description">
+                                진정한 캠핑의 재미를 느낄 수 있는 텐트에서 자연과 하나되는 경험을 해보세요. 
+                                아이들과 함께하는 가족 캠핑에 인기가 많습니다.
+                            </p>
+                            <div class="facility-specs">
+                                <span class="spec-item">👥 기본 6명</span>
+                                <span class="spec-item">⛺ 텐트 완비</span>
+                                <span class="spec-item">🌿 자연 체험</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="facility-detail">
+                        <div class="facility-image-small" style="background: linear-gradient(135deg, #ed8936, #dd6b20);">
+                            🛋️
+                        </div>
+                        <div class="facility-info">
+                            <div class="facility-subtitle">Sofa Table</div>
+                            <h4>소파테이블 (ST01-ST04)</h4>
+                            <p class="facility-description">
+                                편안한 소파와 테이블이 마련된 공간에서 여유로운 시간을 보내세요. 
+                                편의성과 캠핑의 즐거움을 모두 만족시키는 공간입니다.
+                            </p>
+                            <div class="facility-specs">
+                                <span class="spec-item">👥 기본 4명</span>
+                                <span class="spec-item">🛋️ 편안한 소파</span>
+                                <span class="spec-item">📱 편의 시설 완비</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="facility-detail">
+                        <div class="facility-image-small" style="background: linear-gradient(135deg, #e53e3e, #c53030);">
+                            🌙
+                        </div>
+                        <div class="facility-info">
+                            <div class="facility-subtitle">Night Table</div>
+                            <h4>야장테이블 (YT01-YT04)</h4>
+                            <p class="facility-description">
+                                별이 쏟아지는 밤하늘 아래에서 로맨틱한 시간을 보낼 수 있는 공간입니다. 
+                                연인이나 친구들과의 특별한 추억을 만들기에 완벽합니다.
+                            </p>
+                            <div class="facility-specs">
+                                <span class="spec-item">👥 기본 4명</span>
+                                <span class="spec-item">🌙 야외 테이블</span>
+                                <span class="spec-item">✨ 별관찰 최적</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 팀 섹션 -->
+        <section class="section">
+            <h2 class="section-title">OSO 팀을 소개합니다</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-avatar">👨‍💼</div>
+                    <div class="member-name">김대표</div>
+                    <div class="member-role">대표이사 / CEO</div>
+                    <p class="member-description">
+                        20년간의 외식업 경험을 바탕으로 OSO Camping BBQ를 설립하여 
+                        차별화된 캠핑 문화를 만들어가고 있습니다.
+                    </p>
+                </div>
+                
+                <div class="team-member">
+                    <div class="member-avatar">👩‍🍳</div>
+                    <div class="member-name">박셰프</div>
+                    <div class="member-role">총괄 셰프 / Head Chef</div>
+                    <p class="member-description">
+                        미슐랭 스타 레스토랑 경력을 가진 전문 셰프로 
+                        최고의 BBQ 레시피와 조리법을 개발합니다.
+                    </p>
+                </div>
+                
+                <div class="team-member">
+                    <div class="member-avatar">👨‍💻</div>
+                    <div class="member-name">이개발</div>
+                    <div class="member-role">기술이사 / CTO</div>
+                    <p class="member-description">
+                        스마트한 예약 시스템과 고객 서비스 플랫폼을 구축하여 
+                        편리한 캠핑 경험을 제공합니다.
+                    </p>
+                </div>
+                
+                <div class="team-member">
+                    <div class="member-avatar">👩‍🎨</div>
+                    <div class="member-name">정디자이너</div>
+                    <div class="member-role">공간디자인 / Space Designer</div>
+                    <p class="member-description">
+                        자연과 조화를 이루는 아름다운 캠핑 공간을 
+                        디자인하여 특별한 경험을 선사합니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- CTA 섹션 -->
+        <section class="cta-section">
+            <div class="cta-content">
+                <h2 class="cta-title">OSO에서 특별한 추억을 만들어보세요</h2>
+                <p class="cta-description">
+                    지금 바로 예약하고 자연 속에서 즐기는<br>
+                    특별한 캠핑과 BBQ 체험을 시작하세요
+                </p>
+                <a href="index.html" class="btn btn-white">
+                    <span>예약하기</span>
+                    <span>📅</span>
+                </a>
+            </div>
+        </section>
+    </div>
+    
+    <!-- 푸터 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>OSO Camping BBQ</h3>
+                <p>자연 속에서 즐기는 특별한 캠핑과 BBQ 체험</p>
+                <p>가족, 친구들과 함께 잊을 수 없는 추억을 만들어보세요</p>
+            </div>
+            
+            <div class="footer-section">
+                <h3>빠른 링크</h3>
+                <a href="home.html">홈</a>
+                <a href="about.html">소개</a>
+                <a href="index.html">예약하기</a>
+                <a href="reservation-lookup.html">예약조회</a>
+                <a href="contact.html">연락처</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>시설 정보</h3>
+                <a href="index.html?category=PR">프라이빗룸</a>
+                <a href="index.html?category=VP">VIP동</a>
+                <a href="index.html?category=TN">텐트동</a>
+                <a href="index.html?category=ST">소파테이블</a>
+                <a href="index.html?category=YT">야장테이블</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>문의하기</h3>
+                <p>📞 전화: 02-1234-5678</p>
+                <p>📧 이메일: info@osocamping.com</p>
+                <p>🕐 운영시간: 24시간</p>
+                <a href="admin-login.html">관리자 로그인</a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 OSO Camping BBQ. All rights reserved. | 
+               <a href="#" style="color: inherit;">개인정보처리방침</a> | 
+               <a href="#" style="color: inherit;">이용약관</a>
+            </p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                🤖 Generated with <a href="https://claude.ai/code" style="color: var(--primary-color);">Claude Code</a>
+            </p>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script>
+        // 부드러운 스크롤
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // 스크롤 애니메이션
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.6s ease';
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        // 애니메이션 요소들 관찰 시작
+        document.addEventListener('DOMContentLoaded', function() {
+            const animatedElements = document.querySelectorAll('.animate-fadeInUp, .value-card, .team-member, .facility-detail');
+            
+            animatedElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                observer.observe(el);
+            });
+            
+            // 초기 애니메이션 (뷰포트에 이미 있는 요소들)
+            setTimeout(() => {
+                animatedElements.forEach((el, index) => {
+                    if (el.getBoundingClientRect().top < window.innerHeight) {
+                        setTimeout(() => {
+                            el.style.animation = 'fadeInUp 0.6s ease';
+                            el.style.opacity = '1';
+                            el.style.transform = 'translateY(0)';
+                        }, index * 100);
+                    }
+                });
+            }, 300);
+        });
+        
+        console.log('OSO Camping BBQ 소개 페이지 로드 완료');
+    </script>
+</body>
+</html>

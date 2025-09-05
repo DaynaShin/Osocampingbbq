@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 로그인 - OSO Camping BBQ</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* 로그인 페이지 전용 스타일 */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .login-logo {
+            margin-bottom: 30px;
+        }
+
+        .login-logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-logo .logo-icon {
+            font-size: 2.5rem;
+        }
+
+        .login-subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .form-group input:invalid {
+            border-color: #fed7d7;
+        }
+
+        .login-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4a5568;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .forgot-password {
+            color: #4facfe;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password:hover {
+            color: #3182ce;
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-loading {
+            display: none;
+        }
+
+        .login-btn.loading .btn-text {
+            opacity: 0;
+        }
+
+        .login-btn.loading .btn-loading {
+            display: inline-block;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: left;
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: left;
+            display: none;
+        }
+
+        .footer-links {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            color: #718096;
+        }
+
+        .footer-links a {
+            color: #4facfe;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .security-info {
+            background: #edf2f7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #4a5568;
+            text-align: left;
+        }
+
+        .security-info .security-icon {
+            color: #48bb78;
+            margin-right: 5px;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 25px;
+                margin: 10px;
+            }
+            
+            .login-logo h1 {
+                font-size: 1.7rem;
+            }
+            
+            .login-logo .logo-icon {
+                font-size: 2rem;
+            }
+        }
+
+        /* 접근성 개선 */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* 다크모드 대응 (선택적) */
+        @media (prefers-color-scheme: dark) {
+            .login-container {
+                background: #2d3748;
+                color: white;
+            }
+            
+            .login-logo h1,
+            .form-group label {
+                color: white;
+            }
+            
+            .form-group input {
+                background: #4a5568;
+                border-color: #718096;
+                color: white;
+            }
+            
+            .form-group input::placeholder {
+                color: #a0aec0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <h1>
+                <span class="logo-icon">🏕️</span>
+                OSO Camping BBQ
+            </h1>
+        </div>
+        
+        <p class="login-subtitle">관리자 시스템에 로그인하세요</p>
+        
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <label for="email">이메일 주소</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    autocomplete="email"
+                    placeholder="admin@osocamping.com"
+                    aria-describedby="email-help"
+                >
+                <div id="email-help" class="sr-only">관리자 계정 이메일을 입력하세요</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                    aria-describedby="password-help"
+                >
+                <div id="password-help" class="sr-only">관리자 계정 비밀번호를 입력하세요</div>
+            </div>
+            
+            <div class="login-options">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    로그인 상태 유지
+                </label>
+                <a href="#" class="forgot-password" onclick="showForgotPassword()">비밀번호 찾기</a>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginButton">
+                <span class="btn-text">관리자 로그인</span>
+                <span class="btn-loading">
+                    <div class="loading-spinner"></div>
+                    로그인 중...
+                </span>
+            </button>
+        </form>
+        
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        
+        <div class="security-info">
+            <span class="security-icon">🔒</span>
+            <strong>보안 알림:</strong> 이 페이지는 관리자 전용입니다. 
+            모든 로그인 시도는 보안을 위해 기록됩니다.
+        </div>
+        
+        <div class="footer-links">
+            <a href="index.html">고객 페이지</a> |
+            <a href="reservation-lookup.html">예약 조회</a> |
+            <a href="#" onclick="showSupportInfo()">기술 지원</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="env.js"></script>
+    <script src="supabase-config-v2.js"></script>
+    
+    <script>
+        // ============================
+        // 관리자 인증 시스템
+        // ============================
+        
+        class AdminAuthSystem {
+            constructor() {
+                this.supabaseClient = null;
+                this.currentUser = null;
+                this.sessionToken = null;
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    // Supabase 클라이언트 초기화
+                    if (typeof window.__ENV !== 'undefined') {
+                        this.supabaseClient = supabase.createClient(
+                            window.__ENV.SUPABASE_URL,
+                            window.__ENV.SUPABASE_ANON_KEY
+                        );
+                    } else {
+                        throw new Error('환경 설정이 로드되지 않았습니다.');
+                    }
+                    
+                    // 기존 세션 확인
+                    await this.checkExistingSession();
+                    
+                    // 이벤트 리스너 설정
+                    this.setupEventListeners();
+                    
+                } catch (error) {
+                    console.error('관리자 인증 시스템 초기화 실패:', error);
+                    this.showError('시스템 초기화에 실패했습니다. 페이지를 새로고침해 주세요.');
+                }
+            }
+            
+            setupEventListeners() {
+                const loginForm = document.getElementById('loginForm');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+                }
+                
+                // Enter 키 처리
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+                        const loginButton = document.getElementById('loginButton');
+                        if (loginButton && !loginButton.disabled) {
+                            loginButton.click();
+                        }
+                    }
+                });
+            }
+            
+            async checkExistingSession() {
+                try {
+                    const { data: { session }, error } = await this.supabaseClient.auth.getSession();
+                    
+                    if (error) {
+                        console.error('세션 확인 실패:', error);
+                        return;
+                    }
+                    
+                    if (session && session.user) {
+                        // 관리자 권한 확인
+                        const isAdmin = await this.verifyAdminPermissions(session.user);
+                        if (isAdmin) {
+                            // 관리자 페이지로 리다이렉트
+                            window.location.href = 'admin.html';
+                            return;
+                        } else {
+                            // 관리자가 아닌 경우 세션 정리
+                            await this.supabaseClient.auth.signOut();
+                        }
+                    }
+                } catch (error) {
+                    console.error('기존 세션 확인 중 오류:', error);
+                }
+            }
+            
+            async handleLogin(event) {
+                event.preventDefault();
+                
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const rememberMe = document.getElementById('rememberMe').checked;
+                
+                if (!email || !password) {
+                    this.showError('이메일과 비밀번호를 모두 입력해 주세요.');
+                    return;
+                }
+                
+                try {
+                    this.setLoading(true);
+                    this.clearMessages();
+                    
+                    // Supabase Auth 로그인
+                    const { data: authData, error: authError } = await this.supabaseClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+                    
+                    if (authError) {
+                        throw new Error(authError.message);
+                    }
+                    
+                    if (!authData.user) {
+                        throw new Error('로그인에 실패했습니다.');
+                    }
+                    
+                    // 관리자 권한 확인
+                    const isAdmin = await this.verifyAdminPermissions(authData.user);
+                    if (!isAdmin) {
+                        // 관리자가 아닌 경우 로그아웃
+                        await this.supabaseClient.auth.signOut();
+                        throw new Error('관리자 권한이 없습니다.');
+                    }
+                    
+                    // 관리자 로그인 처리
+                    const loginResult = await this.processAdminLogin(authData.user, rememberMe);
+                    
+                    if (loginResult.success) {
+                        this.showSuccess('로그인 성공! 관리자 페이지로 이동합니다...');
+                        
+                        // 세션 정보 저장
+                        if (rememberMe) {
+                            localStorage.setItem('admin_session', JSON.stringify({
+                                user_id: authData.user.id,
+                                session_id: loginResult.session_id,
+                                timestamp: Date.now()
+                            }));
+                        }
+                        
+                        // 관리자 페이지로 리다이렉트
+                        setTimeout(() => {
+                            window.location.href = 'admin.html';
+                        }, 1500);
+                        
+                    } else {
+                        throw new Error(loginResult.error || '로그인 처리 중 오류가 발생했습니다.');
+                    }
+                    
+                } catch (error) {
+                    console.error('로그인 실패:', error);
+                    
+                    // 사용자 친화적 에러 메시지
+                    let errorMessage = '로그인에 실패했습니다.';
+                    
+                    if (error.message.includes('Invalid login credentials')) {
+                        errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+                    } else if (error.message.includes('Email not confirmed')) {
+                        errorMessage = '이메일 인증이 완료되지 않았습니다.';
+                    } else if (error.message.includes('관리자 권한')) {
+                        errorMessage = '관리자 권한이 없습니다. 시스템 관리자에게 문의하세요.';
+                    } else if (error.message.includes('Too many requests')) {
+                        errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해 주세요.';
+                    }
+                    
+                    this.showError(errorMessage);
+                    
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+            
+            async verifyAdminPermissions(user) {
+                try {
+                    // 관리자 프로필 존재 확인
+                    const { data, error } = await this.supabaseClient
+                        .from('admin_profiles')
+                        .select('id, role, is_active')
+                        .eq('id', user.id)
+                        .eq('is_active', true)
+                        .single();
+                    
+                    return !error && data && data.is_active;
+                } catch (error) {
+                    console.error('관리자 권한 확인 실패:', error);
+                    return false;
+                }
+            }
+            
+            async processAdminLogin(user, rememberMe) {
+                try {
+                    // 세션 토큰 생성
+                    this.sessionToken = this.generateSessionToken();
+                    
+                    // 클라이언트 정보 수집
+                    const clientInfo = this.getClientInfo();
+                    
+                    // 관리자 로그인 함수 호출
+                    const { data, error } = await this.supabaseClient.rpc('admin_login', {
+                        p_session_token: this.sessionToken,
+                        p_ip_address: clientInfo.ip,
+                        p_user_agent: clientInfo.userAgent
+                    });
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('관리자 로그인 처리 실패:', error);
+                    return { success: false, error: error.message };
+                }
+            }
+            
+            generateSessionToken() {
+                return 'admin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+            
+            getClientInfo() {
+                return {
+                    userAgent: navigator.userAgent,
+                    ip: null // 서버에서 IP 주소를 추출하도록 함
+                };
+            }
+            
+            setLoading(isLoading) {
+                const loginButton = document.getElementById('loginButton');
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                
+                if (loginButton) {
+                    loginButton.disabled = isLoading;
+                    loginButton.classList.toggle('loading', isLoading);
+                }
+                
+                if (emailInput) emailInput.disabled = isLoading;
+                if (passwordInput) passwordInput.disabled = isLoading;
+            }
+            
+            showError(message) {
+                const errorElement = document.getElementById('errorMessage');
+                if (errorElement) {
+                    errorElement.textContent = message;
+                    errorElement.style.display = 'block';
+                }
+                
+                // 성공 메시지 숨김
+                const successElement = document.getElementById('successMessage');
+                if (successElement) {
+                    successElement.style.display = 'none';
+                }
+            }
+            
+            showSuccess(message) {
+                const successElement = document.getElementById('successMessage');
+                if (successElement) {
+                    successElement.textContent = message;
+                    successElement.style.display = 'block';
+                }
+                
+                // 에러 메시지 숨김
+                const errorElement = document.getElementById('errorMessage');
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            }
+            
+            clearMessages() {
+                const errorElement = document.getElementById('errorMessage');
+                const successElement = document.getElementById('successMessage');
+                
+                if (errorElement) errorElement.style.display = 'none';
+                if (successElement) successElement.style.display = 'none';
+            }
+        }
+        
+        // ============================
+        // 유틸리티 함수들
+        // ============================
+        
+        function showForgotPassword() {
+            alert('비밀번호 재설정이 필요한 경우 시스템 관리자에게 문의하세요.\n\n연락처: admin@osocamping.com');
+        }
+        
+        function showSupportInfo() {
+            const supportInfo = `
+기술 지원 정보
+
+• 이메일: tech-support@osocamping.com
+• 전화: 02-1234-5678
+• 운영시간: 평일 09:00-18:00
+
+시스템 관련 문의사항이 있으시면 언제든지 연락주세요.
+            `.trim();
+            
+            alert(supportInfo);
+        }
+        
+        // ============================
+        // 앱 초기화
+        // ============================
+        
+        let adminAuthSystem;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 관리자 인증 시스템 초기화
+            adminAuthSystem = new AdminAuthSystem();
+            
+            // 개발 환경에서의 자동 완성 (운영에서는 제거)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                
+                // 개발용 기본값 설정 (실제 운영에서는 제거해야 함)
+                // emailInput.value = 'admin@osocamping.com';
+                // passwordInput.value = 'admin123!';
+            }
+            
+            // 폼 검증 개선
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            if (emailInput) {
+                emailInput.addEventListener('blur', function() {
+                    const email = this.value.trim();
+                    if (email && !isValidEmail(email)) {
+                        this.style.borderColor = '#fed7d7';
+                    } else {
+                        this.style.borderColor = '#e2e8f0';
+                    }
+                });
+            }
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    if (password.length > 0 && password.length < 6) {
+                        this.style.borderColor = '#fed7d7';
+                    } else {
+                        this.style.borderColor = '#e2e8f0';
+                    }
+                });
+            }
+        });
+        
+        // 이메일 유효성 검증
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // 페이지 언로드 시 정리
+        window.addEventListener('beforeunload', function() {
+            // 필요한 정리 작업 수행
+            if (adminAuthSystem && adminAuthSystem.supabaseClient) {
+                // 세션 정보 저장 등
+            }
+        });
+        
+        // 보안을 위한 우클릭 및 개발자 도구 제한 (선택적)
+        /*
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+        */
+    </script>
+</body>
+</html>

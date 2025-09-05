@@ -3,26 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- orig: <title>?�약?�청 - ?�소마�???/title> -->
-    <title>예약 신청 - 오소마케팅</title>
+    <title>예약하기 - OSO Camping BBQ</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="env.js"></script>
-    <style>
-        .nav-btn { text-decoration: none; background: rgba(255,255,255,0.2); color: #fff; padding: 8px 14px; border-radius: 6px; }
-    </style>
-    
 </head>
 <body>
-    <div class="container">
-        <header>
-            <!-- orig: <h1>?�약?�청</h1> -->
-            <h1>OSO Camping BBQ 예약</h1>
-            <p>프라이빗룸, 소파테이블, 텐트동 등 다양한 공간을 예약하세요.</p>
-            <div style="position: absolute; top: 20px; right: 20px;">
-                <a href="admin.html" class="nav-btn" style="font-size: 0.9rem; padding: 8px 16px;">관리자</a>
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>OSO Camping BBQ</h2>
             </div>
-        </header>
+            <div class="nav-menu" id="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="home.html" class="nav-link">홈</a></li>
+                    <li><a href="about.html" class="nav-link">소개</a></li>
+                    <li><a href="index.html" class="nav-link active">예약</a></li>
+                    <li><a href="contact.html" class="nav-link">연락처</a></li>
+                    <li><a href="admin.html" class="nav-link">관리자</a></li>
+                </ul>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Reservation Hero Section -->
+    <section class="reservation-hero">
+        <div class="hero-overlay"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">OSO Camping BBQ 예약</h1>
+                <p class="hero-subtitle">자연 속에서 즐기는 특별한 캠핑 BBQ 경험<br>지금 바로 예약하세요</p>
+                <div class="hero-features">
+                    <div class="feature-item">
+                        <i data-lucide="tent"></i>
+                        <span>프라이빗룸</span>
+                    </div>
+                    <div class="feature-item">
+                        <i data-lucide="sofa"></i>
+                        <span>소파테이블</span>
+                    </div>
+                    <div class="feature-item">
+                        <i data-lucide="trees"></i>
+                        <span>텐트동</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Reservation Content -->
+    <section class="reservation-content">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a href="home.html">홈</a>
+                <i data-lucide="chevron-right"></i>
+                <span>예약하기</span>
+            </div>
 
         <main>
             <!-- 예약 폼 -->
@@ -137,22 +182,144 @@
 
             <!-- 예약 현황 (선택사항) -->
             <div class="status-container">
-                <!-- orig: ?�약 ?�황 -->
                 <h3>예약 현황</h3>
                 <div id="reservationStatus" class="status-info">
-                    <!-- orig sentence broken -->
                     <p>예약 완료 시 확인 메시지를 보내드립니다.</p>
                 </div>
             </div>
-        </main>
+        </div>
+    </section>
 
-        <footer>
-            <!-- orig: &copy; 2025 ?�소마�??? All rights reserved. -->
-            <p>&copy; 2025 OSO Camping BBQ All rights reserved.</p>
-        </footer>
-    </div>
+    <!-- Reservation Features Section -->
+    <section class="reservation-features">
+        <div class="container">
+            <h2>예약 안내</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <h3>간편 예약</h3>
+                    <p>온라인으로 간편하게 예약하고 실시간으로 확인하세요</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h3>안전한 결제</h3>
+                    <p>믿을 수 있는 결제 시스템으로 안전하게 이용하세요</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i data-lucide="headphones"></i>
+                    </div>
+                    <h3>24시간 문의</h3>
+                    <p>예약 관련 문의는 언제든지 연락해 주세요</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>예약 문의가 있으신가요?</h2>
+                <p>전화나 카카오톡으로 간편하게 문의하세요</p>
+                <div class="cta-buttons">
+                    <a href="tel:010-1234-5678" class="cta-btn primary">
+                        <i data-lucide="phone"></i>
+                        전화 문의
+                    </a>
+                    <a href="contact.html" class="cta-btn secondary">
+                        <i data-lucide="message-circle"></i>
+                        연락처 보기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>OSO Camping BBQ</h3>
+                    <p>자연과 함께하는 특별한 캠핑 경험</p>
+                    <div class="social-links">
+                        <a href="#"><i data-lucide="instagram"></i></a>
+                        <a href="#"><i data-lucide="facebook"></i></a>
+                        <a href="#"><i data-lucide="youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>빠른 링크</h4>
+                    <ul>
+                        <li><a href="home.html">홈</a></li>
+                        <li><a href="about.html">소개</a></li>
+                        <li><a href="index.html">예약</a></li>
+                        <li><a href="contact.html">연락처</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>연락처</h4>
+                    <ul class="contact-info">
+                        <li><i data-lucide="phone"></i> 010-1234-5678</li>
+                        <li><i data-lucide="mail"></i> info@osocamping.com</li>
+                        <li><i data-lucide="map-pin"></i> 경기도 가평군 설악면 미사리로 123</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>운영 시간</h4>
+                    <ul>
+                        <li>체크인: 15:00 ~</li>
+                        <li>체크아웃: ~ 11:00</li>
+                        <li>전화 상담: 09:00 ~ 18:00</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 OSO Camping BBQ. All rights reserved.</p>
+                <p>사업자등록번호: 123-45-67890 | 통신판매업신고번호: 2024-경기가평-0123</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mobile Navigation Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.getElementById('nav-toggle');
+            const navMenu = document.getElementById('nav-menu');
+
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    navToggle.classList.toggle('active');
+                });
+            }
+
+            // Navbar background on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+        });
+    </script>
     <script src="supabase-config-v2.js"></script>
     <script src="oso-reservation.js"></script>
 </body>

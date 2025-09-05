@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연락처 - OSO Camping BBQ</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>OSO Camping BBQ</h2>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="home.html" class="nav-link">홈</a></li>
+                    <li><a href="about.html" class="nav-link">소개</a></li>
+                    <li><a href="index.html" class="nav-link">예약</a></li>
+                    <li><a href="contact.html" class="nav-link active">연락처</a></li>
+                    <li><a href="admin.html" class="nav-link">관리자</a></li>
+                </ul>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="contact-hero">
+        <div class="hero-overlay"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">연락처 & 오시는 길</h1>
+                <p class="hero-subtitle">OSO Camping BBQ와 함께하는 특별한 캠핑 경험을 위해<br>언제든지 연락해 주세요</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Information -->
+    <section class="contact-info">
+        <div class="container">
+            <div class="section-header">
+                <h2>연락 정보</h2>
+                <p>궁금한 점이나 예약 문의는 언제든지 연락해 주세요</p>
+            </div>
+            
+            <div class="contact-cards">
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i data-lucide="phone"></i>
+                    </div>
+                    <h3>전화 문의</h3>
+                    <p class="contact-detail">010-1234-5678</p>
+                    <p class="contact-time">운영시간: 09:00 ~ 18:00</p>
+                    <a href="tel:010-1234-5678" class="contact-btn">전화 걸기</a>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i data-lucide="message-circle"></i>
+                    </div>
+                    <h3>카카오톡 문의</h3>
+                    <p class="contact-detail">@OSO_Camping</p>
+                    <p class="contact-time">빠른 상담 가능</p>
+                    <a href="#" class="contact-btn">카톡 문의</a>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i data-lucide="mail"></i>
+                    </div>
+                    <h3>이메일 문의</h3>
+                    <p class="contact-detail">info@osocamping.com</p>
+                    <p class="contact-time">24시간 접수 가능</p>
+                    <a href="mailto:info@osocamping.com" class="contact-btn">메일 보내기</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Section -->
+    <section class="location-section">
+        <div class="container">
+            <div class="location-content">
+                <div class="location-info">
+                    <h2>오시는 길</h2>
+                    <div class="address-card">
+                        <div class="address-header">
+                            <i data-lucide="map-pin"></i>
+                            <h3>OSO Camping BBQ</h3>
+                        </div>
+                        <p class="address">경기도 가평군 설악면 미사리로 123<br>OSO 캠핑장</p>
+                        
+                        <div class="directions">
+                            <h4>자차 이용시</h4>
+                            <ul>
+                                <li>서울에서 약 1시간 30분</li>
+                                <li>경춘국도 → 가평 → 설악면 방향</li>
+                                <li>미사리로 진입 후 3km</li>
+                            </ul>
+
+                            <h4>대중교통 이용시</h4>
+                            <ul>
+                                <li>상봉역 → ITX-청춘 → 가평역</li>
+                                <li>가평역에서 설악면행 버스 탑승</li>
+                                <li>미사리 정류장 하차 후 도보 10분</li>
+                            </ul>
+                        </div>
+
+                        <div class="location-buttons">
+                            <a href="#" class="location-btn primary">네이버 지도</a>
+                            <a href="#" class="location-btn secondary">카카오 지도</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="map-container">
+                    <div class="map-placeholder">
+                        <i data-lucide="map"></i>
+                        <p>지도 로딩 중...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>자주 묻는 질문</h2>
+                <p>고객들이 자주 문의하시는 내용들을 정리했습니다</p>
+            </div>
+
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>예약은 어떻게 하나요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>홈페이지의 예약 시스템을 통해 온라인으로 예약하실 수 있습니다. 전화 예약도 가능합니다.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>체크인/체크아웃 시간은 언제인가요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>체크인: 오후 3시부터<br>체크아웃: 오전 11시까지<br>시간 변경이 필요하시면 사전에 연락 주세요.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>반려동물 동반이 가능한가요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>네, 반려동물 동반이 가능합니다. 다만 다른 고객을 위해 목줄 착용과 배변 처리는 필수입니다.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>취소 정책은 어떻게 되나요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>이용일 7일 전: 전액 환불<br>이용일 3-6일 전: 50% 환불<br>이용일 1-2일 전: 30% 환불<br>당일 취소: 환불 불가</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>주차장은 충분한가요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>넉넉한 주차 공간을 확보하고 있습니다. 대형차량도 주차 가능하며 주차비는 무료입니다.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>BBQ 장비 대여가 가능한가요?</h3>
+                        <i data-lucide="chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>BBQ 그릴, 테이블, 의자 등 기본 장비를 대여해 드립니다. 예약시 미리 신청해 주시면 됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form -->
+    <section class="contact-form-section">
+        <div class="container">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>문의하기</h2>
+                    <p>궁금한 점이 있으시면 언제든지 문의해 주세요</p>
+                </div>
+
+                <form class="contact-form" id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">성함 *</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">연락처 *</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">이메일</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">문의 종류</label>
+                        <select id="subject" name="subject">
+                            <option value="">선택해 주세요</option>
+                            <option value="reservation">예약 문의</option>
+                            <option value="facilities">시설 문의</option>
+                            <option value="price">요금 문의</option>
+                            <option value="event">행사 문의</option>
+                            <option value="other">기타 문의</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">문의 내용 *</label>
+                        <textarea id="message" name="message" rows="6" required placeholder="문의하실 내용을 상세히 적어주세요."></textarea>
+                    </div>
+
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="privacy" name="privacy" required>
+                            <span class="checkmark"></span>
+                            개인정보 수집 및 이용에 동의합니다. <a href="#" class="privacy-link">[자세히 보기]</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <i data-lucide="send"></i>
+                        문의 전송
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2>지금 바로 예약하세요!</h2>
+                <p>자연 속에서 즐기는 특별한 캠핑 BBQ 경험을 놓치지 마세요</p>
+                <div class="cta-buttons">
+                    <a href="index.html" class="cta-btn primary">예약하기</a>
+                    <a href="tel:010-1234-5678" class="cta-btn secondary">전화 문의</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>OSO Camping BBQ</h3>
+                    <p>자연과 함께하는 특별한 캠핑 경험</p>
+                    <div class="social-links">
+                        <a href="#"><i data-lucide="instagram"></i></a>
+                        <a href="#"><i data-lucide="facebook"></i></a>
+                        <a href="#"><i data-lucide="youtube"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>빠른 링크</h4>
+                    <ul>
+                        <li><a href="home.html">홈</a></li>
+                        <li><a href="about.html">소개</a></li>
+                        <li><a href="index.html">예약</a></li>
+                        <li><a href="contact.html">연락처</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>연락처</h4>
+                    <ul class="contact-info">
+                        <li><i data-lucide="phone"></i> 010-1234-5678</li>
+                        <li><i data-lucide="mail"></i> info@osocamping.com</li>
+                        <li><i data-lucide="map-pin"></i> 경기도 가평군 설악면 미사리로 123</li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>운영 시간</h4>
+                    <ul>
+                        <li>체크인: 15:00 ~</li>
+                        <li>체크아웃: ~ 11:00</li>
+                        <li>전화 상담: 09:00 ~ 18:00</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 OSO Camping BBQ. All rights reserved.</p>
+                <p>사업자등록번호: 123-45-67890 | 통신판매업신고번호: 2024-경기가평-0123</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mobile Navigation Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.getElementById('nav-toggle');
+            const navMenu = document.getElementById('nav-menu');
+
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                    navToggle.classList.toggle('active');
+                });
+            }
+
+            // FAQ Toggle
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                const answer = item.querySelector('.faq-answer');
+                const icon = item.querySelector('.faq-question i');
+
+                question.addEventListener('click', () => {
+                    const isActive = item.classList.contains('active');
+                    
+                    // Close all FAQ items
+                    faqItems.forEach(faq => {
+                        faq.classList.remove('active');
+                        faq.querySelector('.faq-answer').style.maxHeight = '0';
+                        faq.querySelector('.faq-question i').style.transform = 'rotate(0deg)';
+                    });
+
+                    // Open clicked item if it wasn't active
+                    if (!isActive) {
+                        item.classList.add('active');
+                        answer.style.maxHeight = answer.scrollHeight + 'px';
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            // Contact Form Handling
+            const contactForm = document.getElementById('contactForm');
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Get form data
+                    const formData = new FormData(contactForm);
+                    const data = Object.fromEntries(formData);
+                    
+                    // Simple validation
+                    if (!data.name || !data.phone || !data.message) {
+                        alert('필수 항목을 모두 입력해 주세요.');
+                        return;
+                    }
+
+                    if (!data.privacy) {
+                        alert('개인정보 수집 및 이용에 동의해 주세요.');
+                        return;
+                    }
+
+                    // Show loading state
+                    const submitBtn = contactForm.querySelector('.submit-btn');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i data-lucide="loader-2"></i> 전송 중...';
+                    submitBtn.disabled = true;
+
+                    // Simulate form submission
+                    setTimeout(() => {
+                        alert('문의가 성공적으로 전송되었습니다. 빠른 시일 내에 답변 드리겠습니다.');
+                        contactForm.reset();
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        lucide.createIcons();
+                    }, 1500);
+                });
+            }
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Navbar background on scroll
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

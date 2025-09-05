@@ -5,9 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>예약 조회 - OSO Camping BBQ</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h2>OSO Camping BBQ</h2>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <ul class="nav-list">
+                    <li><a href="home.html" class="nav-link">홈</a></li>
+                    <li><a href="about.html" class="nav-link">소개</a></li>
+                    <li><a href="index.html" class="nav-link">예약</a></li>
+                    <li><a href="contact.html" class="nav-link">연락처</a></li>
+                    <li><a href="admin.html" class="nav-link">관리자</a></li>
+                </ul>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
         <header>
             <h1>🏕️ OSO Camping BBQ</h1>

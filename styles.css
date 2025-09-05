@@ -2972,6 +2972,336 @@ footer {
     }
 }
 
+/* ===============================================
+ * Phase 2.3: 관리자 인증 시스템 UI 스타일
+ * =============================================== */
+
+/* 관리자 사용자 정보 영역 */
+.admin-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    position: relative;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 100px;
+}
+
+.user-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2d3748;
+    line-height: 1.2;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #718096;
+    line-height: 1.2;
+}
+
+.user-menu {
+    position: relative;
+}
+
+.user-menu-btn {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.user-menu-btn:hover {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    z-index: 1000;
+    padding: 8px 0;
+    margin-top: 8px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.9rem;
+    color: #4a5568;
+}
+
+.menu-item:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.menu-item.logout {
+    color: #e53e3e;
+}
+
+.menu-item.logout:hover {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.menu-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 8px 0;
+}
+
+/* 프로필 모달 스타일 */
+.profile-info h3 {
+    margin: 0 0 20px 0;
+    color: #2d3748;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.profile-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f7fafc;
+}
+
+.profile-item label {
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 120px;
+    font-size: 0.9rem;
+}
+
+.profile-item span {
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.role-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.role-badge.super_admin {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.role-badge.admin {
+    background: #4facfe;
+    color: white;
+}
+
+.role-badge.viewer {
+    background: #48bb78;
+    color: white;
+}
+
+.profile-permissions h4 {
+    margin: 0 0 16px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.permissions-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.permission-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.permission-resource {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.permission-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.perm-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.perm-badge.read {
+    background: #bee3f8;
+    color: #2b6cb0;
+}
+
+.perm-badge.write {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.perm-badge.delete {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+/* 활동 로그 스타일 */
+.activity-log h3 {
+    margin: 0 0 20px 0;
+    color: #2d3748;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.log-list {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.log-item {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid #e2e8f0;
+    background: #f8f9fa;
+}
+
+.log-item.success {
+    border-left-color: #48bb78;
+    background: #f0fff4;
+}
+
+.log-item.error {
+    border-left-color: #f56565;
+    background: #fff5f5;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.log-action {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.log-time {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.log-resource {
+    font-size: 0.8rem;
+    color: #4a5568;
+    margin-bottom: 4px;
+}
+
+.log-error {
+    font-size: 0.8rem;
+    color: #e53e3e;
+    font-style: italic;
+}
+
+.no-logs {
+    text-align: center;
+    color: #718096;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .admin-user-info {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .user-details {
+        text-align: center;
+        min-width: auto;
+    }
+    
+    .user-menu-dropdown {
+        right: auto;
+        left: 0;
+    }
+    
+    .profile-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .profile-item label {
+        min-width: auto;
+    }
+    
+    .permission-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
 /* ===============================
    Phase 3.3: 예약 변경/취소 UI
    =============================== */
@@ -3516,5 +3846,834 @@ footer {
     .modal-footer .secondary-btn,
     .modal-footer .cancel-btn {
         width: 100%;
+    }
+}
+
+/* =========================
+   Contact Page Styles
+   ========================= */
+
+/* Contact Hero Section */
+.contact-hero {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)), 
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200"><path d="M0,60L48,65C96,70,192,80,288,75C384,70,480,50,576,45C672,40,768,50,864,65C960,80,1008,100,1032,110L1056,120L1056,0L1032,0C1008,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" fill="%23ffffff" opacity="0.1"/></svg>');
+    background-size: cover;
+    background-position: center;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    color: white;
+    text-align: center;
+}
+
+.contact-hero .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+}
+
+.contact-hero .hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.contact-hero .hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.contact-hero .hero-subtitle {
+    font-size: 1.3rem;
+    opacity: 0.95;
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+/* Contact Information Cards */
+.contact-info {
+    padding: 6rem 0;
+    background: #f8f9fa;
+}
+
+.contact-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.contact-card {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.contact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.contact-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+}
+
+.contact-icon i {
+    width: 32px;
+    height: 32px;
+}
+
+.contact-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.contact-detail {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+}
+
+.contact-time {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.contact-btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.contact-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Location Section */
+.location-section {
+    padding: 6rem 0;
+    background: white;
+}
+
+.location-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+}
+
+.location-info h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: #2c3e50;
+}
+
+.address-card {
+    background: #f8f9fa;
+    padding: 2.5rem;
+    border-radius: 15px;
+    border-left: 5px solid #667eea;
+}
+
+.address-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.address-header i {
+    color: #667eea;
+    width: 24px;
+    height: 24px;
+}
+
+.address-header h3 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+}
+
+.address {
+    font-size: 1.1rem;
+    color: #495057;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.directions {
+    margin-bottom: 2rem;
+}
+
+.directions h4 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.directions ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.directions li {
+    padding: 0.3rem 0;
+    color: #495057;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.directions li::before {
+    content: "•";
+    color: #667eea;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+.location-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.location-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.8rem 1.5rem;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.location-btn.primary {
+    background: #667eea;
+    color: white;
+}
+
+.location-btn.secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.location-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.map-container {
+    background: #f8f9fa;
+    border-radius: 15px;
+    overflow: hidden;
+    height: 400px;
+    position: relative;
+}
+
+.map-placeholder {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.map-placeholder i {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1rem;
+}
+
+/* FAQ Section */
+.faq-section {
+    padding: 6rem 0;
+    background: #f8f9fa;
+}
+
+.faq-container {
+    max-width: 800px;
+    margin: 0 auto;
+    margin-top: 3rem;
+}
+
+.faq-item {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+
+.faq-question {
+    padding: 1.5rem 2rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.faq-question:hover {
+    background: #f8f9fa;
+}
+
+.faq-question h3 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.faq-question i {
+    width: 20px;
+    height: 20px;
+    color: #667eea;
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    padding: 0 2rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.faq-answer p {
+    padding: 1.5rem 0;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.faq-item.active .faq-answer {
+    max-height: 200px;
+}
+
+.faq-item.active .faq-question i {
+    transform: rotate(180deg);
+}
+
+/* Contact Form Section */
+.contact-form-section {
+    padding: 6rem 0;
+    background: white;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.form-header h2 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.form-header p {
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.contact-form {
+    background: #f8f9fa;
+    padding: 3rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: start;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: start;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #dee2e6;
+    border-radius: 3px;
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: "✓";
+    position: absolute;
+    color: white;
+    font-size: 12px;
+    top: -2px;
+    left: 2px;
+}
+
+.privacy-link {
+    color: #667eea;
+    text-decoration: underline;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.submit-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive Design for Contact Page */
+@media (max-width: 768px) {
+    .contact-hero .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .contact-hero .hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .contact-cards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .contact-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .location-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .location-buttons {
+        flex-direction: column;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-form {
+        padding: 2rem 1.5rem;
+    }
+
+    .map-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-hero {
+        height: 50vh;
+    }
+
+    .contact-hero .hero-title {
+        font-size: 2rem;
+    }
+
+    .contact-info,
+    .location-section,
+    .faq-section,
+    .contact-form-section {
+        padding: 4rem 0;
+    }
+
+    .contact-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .contact-form {
+        padding: 1.5rem 1rem;
+    }
+}
+
+/* =========================
+   Reservation Page Styles
+   ========================= */
+
+/* Reservation Hero Section */
+.reservation-hero {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)), 
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300"><path d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1008,160,1032,176L1056,192L1056,0L1032,0C1008,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" fill="%23ffffff" opacity="0.1"/></svg>');
+    background-size: cover;
+    background-position: center;
+    height: 50vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    color: white;
+    text-align: center;
+}
+
+.reservation-hero .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+}
+
+.reservation-hero .hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.reservation-hero .hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.reservation-hero .hero-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.95;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.hero-features {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-top: 2rem;
+}
+
+.feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    opacity: 0.9;
+}
+
+.feature-item i {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 0.5rem;
+}
+
+.feature-item span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Reservation Content */
+.reservation-content {
+    padding: 4rem 0;
+    background: white;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.breadcrumb a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb i {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+}
+
+/* Updated Container for Reservation Page */
+.reservation-content .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* Form Container Updates */
+.reservation-content .form-container {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 3rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 3rem;
+}
+
+/* Reservation Features Section */
+.reservation-features {
+    padding: 6rem 0;
+    background: #f8f9fa;
+}
+
+.reservation-features h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: #2c3e50;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.reservation-features .feature-card {
+    background: white;
+    padding: 3rem 2rem;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.reservation-features .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.reservation-features .feature-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: white;
+}
+
+.reservation-features .feature-icon i {
+    width: 32px;
+    height: 32px;
+}
+
+.reservation-features .feature-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.reservation-features .feature-card p {
+    color: #6c757d;
+    line-height: 1.6;
+}
+
+/* Status Container Updates */
+.status-container {
+    background: #e3f2fd;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-top: 2rem;
+    border-left: 5px solid #2196f3;
+}
+
+.status-container h3 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+.status-info p {
+    color: #1565c0;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Responsive Design for Reservation Page */
+@media (max-width: 768px) {
+    .reservation-hero .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .reservation-hero .hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .hero-features {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .feature-item {
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .reservation-features .feature-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .reservation-content .form-container {
+        padding: 2rem 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .reservation-hero {
+        height: 40vh;
+    }
+
+    .reservation-hero .hero-title {
+        font-size: 2rem;
+    }
+
+    .reservation-content {
+        padding: 3rem 0;
+    }
+
+    .reservation-features {
+        padding: 4rem 0;
+    }
+
+    .reservation-content .form-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .reservation-features .feature-card {
+        padding: 1.5rem 1rem;
     }
 }

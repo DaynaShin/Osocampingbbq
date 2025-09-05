@@ -15,6 +15,30 @@
     <!-- orig: <h1>?�약 관�??�스??/h1> -->
     <h1 style="font-size:1.4rem; font-weight:600;">OSO Camping BBQ 관리자</h1>
     <div style="display:flex; align-items:center; gap:20px;">
+      <!-- 관리자 정보 및 로그아웃 -->
+      <div class="admin-user-info" id="adminUserInfo" style="display:none;">
+        <div class="user-avatar" id="userAvatar">👤</div>
+        <div class="user-details">
+          <div class="user-name" id="userName">관리자</div>
+          <div class="user-role" id="userRole">admin</div>
+        </div>
+        <div class="user-menu" id="userMenu">
+          <button class="user-menu-btn" onclick="toggleUserMenu()">▼</button>
+          <div class="user-menu-dropdown" id="userMenuDropdown" style="display:none;">
+            <div class="menu-item" onclick="showProfile()">
+              <span>👤</span> 내 정보
+            </div>
+            <div class="menu-item" onclick="showActivityLog()">
+              <span>📋</span> 활동 로그
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item logout" onclick="handleLogout()">
+              <span>🚪</span> 로그아웃
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- 실시간 알림 벨 -->
       <div class="notification-bell" id="notificationBell">
         <svg viewBox="0 0 24 24">
@@ -670,10 +694,247 @@
   <!-- Scripts -->
   <script src="supabase-config-v2.js"></script>
   <script>
+    // ============================
+    // 관리자 인증 시스템 (Phase 2.3)
+    // ============================
+    
+    class AdminAuthMiddleware {
+      constructor() {
+        this.supabaseClient = null;
+        this.currentAdmin = null;
+        this.sessionToken = null;
+        this.isAuthenticated = false;
+        this.init();
+      }
+      
+      async init() {
+        try {
+          // Supabase 클라이언트 초기화
+          if (typeof window.__ENV !== 'undefined') {
+            this.supabaseClient = supabase.createClient(
+              window.__ENV.SUPABASE_URL,
+              window.__ENV.SUPABASE_ANON_KEY
+            );
+          } else {
+            console.error('환경 설정이 로드되지 않았습니다.');
+            this.redirectToLogin();
+            return;
+          }
+          
+          // 인증 상태 확인
+          await this.checkAuthStatus();
+          
+        } catch (error) {
+          console.error('관리자 인증 미들웨어 초기화 실패:', error);
+          this.redirectToLogin();
+        }
+      }
+      
+      async checkAuthStatus() {
+        try {
+          // Supabase Auth 세션 확인
+          const { data: { session }, error } = await this.supabaseClient.auth.getSession();
+          
+          if (error) {
+            console.error('세션 확인 실패:', error);
+            this.redirectToLogin();
+            return;
+          }
+          
+          if (!session || !session.user) {
+            console.log('인증되지 않은 접근 시도');
+            this.redirectToLogin();
+            return;
+          }
+          
+          // 관리자 권한 확인
+          const isValidAdmin = await this.verifyAdminPermissions(session.user);
+          
+          if (!isValidAdmin) {
+            console.log('관리자 권한 없음');
+            await this.supabaseClient.auth.signOut();
+            this.redirectToLogin();
+            return;
+          }
+          
+          // 인증 성공
+          this.isAuthenticated = true;
+          this.currentAdmin = session.user;
+          
+          // 관리자 프로필 로드
+          await this.loadAdminProfile();
+          
+          // UI 업데이트
+          this.updateAuthUI();
+          
+          // 활동 로그 기록
+          this.logActivity('page_access', 'admin_dashboard');
+          
+          console.log('관리자 인증 성공:', this.currentAdmin.email);
+          
+        } catch (error) {
+          console.error('인증 상태 확인 중 오류:', error);
+          this.redirectToLogin();
+        }
+      }
+      
+      async verifyAdminPermissions(user) {
+        try {
+          const { data, error } = await this.supabaseClient
+            .from('admin_profiles')
+            .select('id, email, full_name, role, is_active, permissions')
+            .eq('id', user.id)
+            .eq('is_active', true)
+            .single();
+          
+          if (error || !data) {
+            console.error('관리자 프로필 조회 실패:', error);
+            return false;
+          }
+          
+          this.adminProfile = data;
+          return true;
+          
+        } catch (error) {
+          console.error('관리자 권한 확인 실패:', error);
+          return false;
+        }
+      }
+      
+      async loadAdminProfile() {
+        try {
+          const { data, error } = await this.supabaseClient.rpc('get_admin_profile');
+          
+          if (error) {
+            console.error('관리자 프로필 로드 실패:', error);
+            return;
+          }
+          
+          if (data && data.length > 0) {
+            this.adminProfile = data[0];
+          }
+          
+        } catch (error) {
+          console.error('관리자 프로필 로드 중 오류:', error);
+        }
+      }
+      
+      updateAuthUI() {
+        const adminUserInfo = document.getElementById('adminUserInfo');
+        const userName = document.getElementById('userName');
+        const userRole = document.getElementById('userRole');
+        const userAvatar = document.getElementById('userAvatar');
+        
+        if (adminUserInfo && this.adminProfile) {
+          adminUserInfo.style.display = 'flex';
+          
+          if (userName) {
+            userName.textContent = this.adminProfile.full_name || this.adminProfile.email || '관리자';
+          }
+          
+          if (userRole) {
+            const roleNames = {
+              'super_admin': '최고관리자',
+              'admin': '관리자',
+              'viewer': '조회자'
+            };
+            userRole.textContent = roleNames[this.adminProfile.role] || this.adminProfile.role;
+          }
+          
+          if (userAvatar) {
+            const avatarEmojis = {
+              'super_admin': '👑',
+              'admin': '👤',
+              'viewer': '👀'
+            };
+            userAvatar.textContent = avatarEmojis[this.adminProfile.role] || '👤';
+          }
+        }
+      }
+      
+      hasPermission(resource, action) {
+        if (!this.adminProfile || !this.adminProfile.permissions) {
+          return false;
+        }
+        
+        const resourcePermissions = this.adminProfile.permissions[resource];
+        if (!resourcePermissions) {
+          return false;
+        }
+        
+        return resourcePermissions[action] === true;
+      }
+      
+      async logActivity(actionType, resourceType = null, resourceId = null, details = {}) {
+        try {
+          await this.supabaseClient.rpc('log_admin_activity', {
+            p_action_type: actionType,
+            p_resource_type: resourceType,
+            p_resource_id: resourceId,
+            p_action_details: details
+          });
+        } catch (error) {
+          console.error('활동 로그 기록 실패:', error);
+        }
+      }
+      
+      redirectToLogin() {
+        console.log('로그인 페이지로 리다이렉트');
+        window.location.href = 'admin-login.html';
+      }
+      
+      async logout() {
+        try {
+          // 활동 로그 기록
+          this.logActivity('logout', 'auth');
+          
+          // Supabase 로그아웃
+          await this.supabaseClient.auth.signOut();
+          
+          // 로컬 저장소 정리
+          localStorage.removeItem('admin_session');
+          
+          // 상태 초기화
+          this.isAuthenticated = false;
+          this.currentAdmin = null;
+          this.adminProfile = null;
+          
+          // 로그인 페이지로 리다이렉트
+          this.redirectToLogin();
+          
+        } catch (error) {
+          console.error('로그아웃 중 오류:', error);
+          // 오류가 있어도 로그인 페이지로 이동
+          this.redirectToLogin();
+        }
+      }
+    }
+    
+    // 전역 변수들
     let currentReservationId = null;
     let currentAction = null;
-
-    document.addEventListener('DOMContentLoaded', function () {
+    let adminAuth = null;
+    
+    // 관리자 인증 미들웨어 초기화 및 메인 앱 로직
+    document.addEventListener('DOMContentLoaded', async function () {
+      // 관리자 인증 시스템 초기화
+      adminAuth = new AdminAuthMiddleware();
+      
+      // 인증이 완료될 때까지 대기 (최대 5초)
+      let attempts = 0;
+      const maxAttempts = 50; // 5초 (100ms * 50)
+      
+      while (!adminAuth.isAuthenticated && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      
+      if (!adminAuth.isAuthenticated) {
+        console.error('인증 시간 초과');
+        return;
+      }
+      
+      // 인증 성공 후 메인 앱 로직 실행
       loadDashboardStats();
       loadRecentReservations();
       setupAdminEventListeners();
@@ -2378,6 +2639,247 @@
       }
       return '-';
     }
+
+    // ============================
+    // 관리자 UI 함수들 (Phase 2.3)
+    // ============================
+    
+    // 사용자 메뉴 토글
+    function toggleUserMenu() {
+      const dropdown = document.getElementById('userMenuDropdown');
+      const isVisible = dropdown.style.display === 'block';
+      
+      // 모든 드롭다운 닫기
+      document.querySelectorAll('.user-menu-dropdown').forEach(d => {
+        d.style.display = 'none';
+      });
+      
+      // 현재 드롭다운 토글
+      if (!isVisible) {
+        dropdown.style.display = 'block';
+      }
+    }
+    
+    // 관리자 프로필 보기
+    function showProfile() {
+      if (!adminAuth || !adminAuth.adminProfile) {
+        showAdminMessage('프로필 정보를 불러올 수 없습니다.', 'error');
+        return;
+      }
+      
+      const profile = adminAuth.adminProfile;
+      const profileHtml = `
+        <div class="profile-info">
+          <h3>관리자 프로필</h3>
+          <div class="profile-details">
+            <div class="profile-item">
+              <label>이메일:</label>
+              <span>${profile.email}</span>
+            </div>
+            <div class="profile-item">
+              <label>이름:</label>
+              <span>${profile.full_name || '설정되지 않음'}</span>
+            </div>
+            <div class="profile-item">
+              <label>역할:</label>
+              <span class="role-badge ${profile.role}">${getRoleDisplayName(profile.role)}</span>
+            </div>
+            <div class="profile-item">
+              <label>마지막 로그인:</label>
+              <span>${profile.last_login_at ? formatDateTime(profile.last_login_at) : '정보 없음'}</span>
+            </div>
+            <div class="profile-item">
+              <label>계정 생성일:</label>
+              <span>${formatDateTime(profile.created_at)}</span>
+            </div>
+          </div>
+          <div class="profile-permissions">
+            <h4>권한 정보</h4>
+            <div class="permissions-grid">
+              ${Object.entries(profile.permissions || {}).map(([resource, perms]) => `
+                <div class="permission-item">
+                  <div class="permission-resource">${getResourceDisplayName(resource)}</div>
+                  <div class="permission-actions">
+                    ${perms.read ? '<span class="perm-badge read">조회</span>' : ''}
+                    ${perms.write ? '<span class="perm-badge write">수정</span>' : ''}
+                    ${perms.delete ? '<span class="perm-badge delete">삭제</span>' : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 모달로 표시
+      showProfileModal(profileHtml);
+      closeUserMenu();
+    }
+    
+    // 활동 로그 보기  
+    async function showActivityLog() {
+      try {
+        if (!adminAuth || !adminAuth.isAuthenticated) {
+          showAdminMessage('인증이 필요합니다.', 'error');
+          return;
+        }
+        
+        // 최근 활동 로그 조회
+        const { data, error } = await adminAuth.supabaseClient
+          .from('admin_activity_logs')
+          .select('*')
+          .eq('admin_id', adminAuth.currentAdmin.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) {
+          throw error;
+        }
+        
+        const logHtml = `
+          <div class="activity-log">
+            <h3>내 활동 로그</h3>
+            <div class="log-list">
+              ${data && data.length > 0 ? data.map(log => `
+                <div class="log-item ${log.success ? 'success' : 'error'}">
+                  <div class="log-header">
+                    <span class="log-action">${getActionDisplayName(log.action_type)}</span>
+                    <span class="log-time">${formatDateTime(log.created_at)}</span>
+                  </div>
+                  ${log.resource_type ? `<div class="log-resource">${getResourceDisplayName(log.resource_type)}</div>` : ''}
+                  ${log.error_message ? `<div class="log-error">${log.error_message}</div>` : ''}
+                </div>
+              `).join('') : '<div class="no-logs">활동 기록이 없습니다.</div>'}
+            </div>
+          </div>
+        `;
+        
+        showProfileModal(logHtml);
+        closeUserMenu();
+        
+      } catch (error) {
+        console.error('활동 로그 조회 실패:', error);
+        showAdminMessage('활동 로그를 불러올 수 없습니다.', 'error');
+      }
+    }
+    
+    // 로그아웃 처리
+    async function handleLogout() {
+      if (!confirm('정말 로그아웃하시겠습니까?')) {
+        return;
+      }
+      
+      try {
+        if (adminAuth) {
+          await adminAuth.logout();
+        } else {
+          // 인증 시스템이 없을 경우 직접 처리
+          window.location.href = 'admin-login.html';
+        }
+      } catch (error) {
+        console.error('로그아웃 실패:', error);
+        // 오류가 있어도 로그인 페이지로 이동
+        window.location.href = 'admin-login.html';
+      }
+    }
+    
+    // 사용자 메뉴 닫기
+    function closeUserMenu() {
+      const dropdown = document.getElementById('userMenuDropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
+    }
+    
+    // 프로필 모달 표시
+    function showProfileModal(content) {
+      // 기존 모달이 있다면 제거
+      const existingModal = document.getElementById('profileModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // 새 모달 생성
+      const modal = document.createElement('div');
+      modal.id = 'profileModal';
+      modal.className = 'modal';
+      modal.style.display = 'block';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+          <div class="modal-header">
+            <button class="modal-close" onclick="closeProfileModal()" aria-label="close">&times;</button>
+          </div>
+          <div class="modal-body">
+            ${content}
+          </div>
+          <div class="modal-footer">
+            <button class="action-btn cancel" onclick="closeProfileModal()">닫기</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // 모달 외부 클릭 시 닫기
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          closeProfileModal();
+        }
+      });
+    }
+    
+    // 프로필 모달 닫기
+    function closeProfileModal() {
+      const modal = document.getElementById('profileModal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+    
+    // 유틸리티 함수들
+    function getRoleDisplayName(role) {
+      const roleNames = {
+        'super_admin': '최고관리자',
+        'admin': '관리자',
+        'viewer': '조회자'
+      };
+      return roleNames[role] || role;
+    }
+    
+    function getResourceDisplayName(resource) {
+      const resourceNames = {
+        'reservations': '예약 신청',
+        'bookings': '예약 현황',
+        'catalog': '시설 관리',
+        'availability': '가용성 관리',
+        'modifications': '변경 요청',
+        'messages': '메시지 관리',
+        'users': '사용자 관리',
+        'auth': '인증',
+        'admin_dashboard': '관리자 대시보드'
+      };
+      return resourceNames[resource] || resource;
+    }
+    
+    function getActionDisplayName(action) {
+      const actionNames = {
+        'login': '로그인',
+        'logout': '로그아웃',
+        'page_access': '페이지 접근',
+        'create': '생성',
+        'update': '수정',
+        'delete': '삭제',
+        'view': '조회'
+      };
+      return actionNames[action] || action;
+    }
+    
+    // 외부 클릭 시 메뉴 닫기
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.admin-user-info')) {
+        closeUserMenu();
+      }
+    });
 
     // DOM이 로드된 후 시스템 초기화
     document.addEventListener('DOMContentLoaded', async function() {
