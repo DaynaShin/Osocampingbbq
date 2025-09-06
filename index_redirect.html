@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSO Camping BBQ</title>
+    <meta http-equiv="refresh" content="0; url=home.html">
+    <link rel="canonical" href="home.html">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .loading {
+            text-align: center;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+        <h2>OSO Camping BBQ</h2>
+        <p>잠시만 기다려주세요...</p>
+        <p><a href="home.html" style="color: white; text-decoration: underline;">수동으로 이동하기</a></p>
+    </div>
+    
+    <script>
+        // 즉시 리다이렉트
+        window.location.href = 'home.html';
+    </script>
+</body>
+</html>
