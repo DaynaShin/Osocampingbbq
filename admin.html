@@ -671,15 +671,32 @@
   </div>
 
   <!-- 상태 변경 확인 모달 -->
-  <div id="confirmModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);">
-    <div class="modal-content" style="background:#fff; max-width:520px; margin:80px auto; border-radius:10px; padding:16px;">
-      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+  <div id="confirmModal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index: 1000;">
+    <div class="modal-content" style="background:#fff; max-width:600px; margin:80px auto; border-radius:10px; padding:20px;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h3>상태 변경 확인</h3>
-        <button class="modal-close" onclick="closeConfirmModal()" aria-label="close">&times;</button>
+        <button class="modal-close" onclick="closeConfirmModal()" aria-label="close" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
       </div>
-      <div id="confirmMessage"></div>
-      <div style="margin-top: 20px; text-align: right;">
-        <button class="action-btn cancel" onclick="closeConfirmModal()">취소</button>
+      
+      <div id="confirmMessage" style="margin-bottom:20px; padding:12px; background:#f8f9fa; border-radius:6px;"></div>
+      
+      <!-- 관리자 입력 필드들 -->
+      <div id="adminInputs" style="margin-bottom:20px;">
+        <div id="cancellationReasonGroup" style="margin-bottom:16px; display:none;">
+          <label for="cancellationReason" style="display:block; margin-bottom:4px; font-weight:500;">취소/삭제 사유:</label>
+          <textarea id="cancellationReason" placeholder="취소 또는 삭제 사유를 입력하세요..." 
+                   style="width:100%; min-height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; resize:vertical;"></textarea>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label for="adminNotes" style="display:block; margin-bottom:4px; font-weight:500;">관리자 메모 (선택사항):</label>
+          <textarea id="adminNotes" placeholder="추가 메모나 특이사항을 입력하세요..." 
+                   style="width:100%; min-height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; resize:vertical;"></textarea>
+        </div>
+      </div>
+      
+      <div style="text-align: right; border-top:1px solid #eee; padding-top:16px;">
+        <button class="action-btn cancel" onclick="closeConfirmModal()" style="margin-right:8px;">취소</button>
         <button class="action-btn confirm" id="confirmButton">확인</button>
       </div>
     </div>
@@ -1211,6 +1228,15 @@
       document.getElementById('confirmMessage').innerHTML = `
         <p>해당 예약을 <strong>확정</strong>하시겠습니까?</p>
         <p style="color:#666; font-size:.9rem; margin-top:10px;">확정 시 고객에게 알림이 발송됩니다.</p>`;
+      
+      // 관리자 입력 필드 표시/숨기기
+      document.getElementById('adminNotesField').style.display = 'block';
+      document.getElementById('cancellationReasonField').style.display = 'none';
+      
+      // 입력 필드 초기화
+      document.getElementById('adminNotes').value = '';
+      document.getElementById('cancellationReason').value = '';
+      
       document.getElementById('confirmButton').onclick = executeConfirm;
       document.getElementById('confirmModal').style.display = 'block';
     }
@@ -1221,6 +1247,15 @@
       document.getElementById('confirmMessage').innerHTML = `
         <p>해당 예약을 <strong>취소</strong>하시겠습니까?</p>
         <p style="color:#666; font-size:.9rem; margin-top:10px;">취소된 예약은 복구할 수 없습니다.</p>`;
+      
+      // 관리자 입력 필드 표시/숨기기
+      document.getElementById('adminNotesField').style.display = 'block';
+      document.getElementById('cancellationReasonField').style.display = 'block';
+      
+      // 입력 필드 초기화
+      document.getElementById('adminNotes').value = '';
+      document.getElementById('cancellationReason').value = '';
+      
       document.getElementById('confirmButton').onclick = executeConfirm;
       document.getElementById('confirmModal').style.display = 'block';
     }
@@ -1231,6 +1266,15 @@
       document.getElementById('confirmMessage').innerHTML = `
         <p style="color:#dc3545;"><strong>주의:</strong> 해당 예약을 영구 <strong>삭제</strong>하시겠습니까?</p>
         <p style="color:#666; font-size:.9rem; margin-top:10px;">삭제된 예약은 복구할 수 없습니다.</p>`;
+      
+      // 관리자 입력 필드 표시/숨기기 (삭제는 취소와 동일하게 처리)
+      document.getElementById('adminNotesField').style.display = 'block';
+      document.getElementById('cancellationReasonField').style.display = 'block';
+      
+      // 입력 필드 초기화
+      document.getElementById('adminNotes').value = '';
+      document.getElementById('cancellationReason').value = '';
+      
       document.getElementById('confirmButton').onclick = executeConfirm;
       document.getElementById('confirmModal').style.display = 'block';
     }
@@ -1239,17 +1283,23 @@
       try {
         let result;
         let message;
+        
+        // 관리자 메모 가져오기
+        const adminNotes = document.getElementById('adminNotes')?.value || null;
+        const cancellationReason = document.getElementById('cancellationReason')?.value || null;
+        
         switch (currentAction) {
           case 'confirm':
-            result = await updateReservation(currentReservationId, { status: 'confirmed' });
+            result = await adminConfirmReservation(currentReservationId, adminNotes);
             message = '예약이 확정되었습니다.';
             break;
           case 'cancel':
-            result = await updateReservation(currentReservationId, { status: 'cancelled' });
+            result = await adminCancelReservation(currentReservationId, cancellationReason, adminNotes);
             message = '예약이 취소되었습니다.';
             break;
           case 'delete':
-            result = await deleteReservation(currentReservationId);
+            const deletionReason = cancellationReason || '관리자에 의한 삭제';
+            result = await adminDeleteReservation(currentReservationId, deletionReason);
             message = '예약이 삭제되었습니다.';
             break;
         }

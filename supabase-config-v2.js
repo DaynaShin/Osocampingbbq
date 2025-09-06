@@ -105,42 +105,114 @@ async function getAvailabilityByDate(date) {
   }
 }
 
-// 가용성 초기화 (특정 날짜의 모든 SKU에 대해 기본 가용성 생성)
-async function initializeAvailability(date) {
+// 최적화된 가용성 초기화 (캐싱 및 중복 호출 방지)
+let availabilityInitCache = new Map();
+let initializationInProgress = new Set();
+
+async function initializeAvailability(date, force = false) {
   try {
-    // 해당 날짜에 가용성 데이터가 있는지 확인
-    const { data: existing } = await supabaseClient
-      .from('availability')
-      .select('sku_code')
-      .eq('date', date);
-
-    if (existing && existing.length > 0) {
-      return { success: true, message: '이미 가용성 데이터가 존재합니다.' };
+    const today = new Date().toDateString();
+    const cacheKey = `${date}_${today}`;
+    
+    // 1. 오늘 이미 초기화했다면 스킵 (force가 false인 경우)
+    if (!force && availabilityInitCache.has(cacheKey)) {
+      const cached = availabilityInitCache.get(cacheKey);
+      if (cached.success) {
+        return { success: true, message: '오늘 이미 초기화되었습니다. (캐시됨)' };
+      }
     }
+    
+    // 2. 동일한 날짜에 대해 초기화가 진행 중이면 대기
+    if (initializationInProgress.has(date)) {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (!initializationInProgress.has(date)) {
+            clearInterval(checkInterval);
+            resolve(availabilityInitCache.get(cacheKey) || { success: true, message: '다른 프로세스에서 초기화됨' });
+          }
+        }, 100);
+        
+        // 최대 5초 대기
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          resolve({ success: false, error: '초기화 대기 시간 초과' });
+        }, 5000);
+      });
+    }
+    
+    // 3. 초기화 진행 상태로 마크
+    initializationInProgress.add(date);
+    
+    try {
+      // 해당 날짜에 가용성 데이터가 있는지 확인
+      const { data: existing, error: checkError } = await supabaseClient
+        .from('availability')
+        .select('sku_code', { count: 'exact' })
+        .eq('date', date)
+        .limit(1);
 
-    // 모든 활성 SKU 조회
-    const skuResult = await getSkuCatalog();
-    if (!skuResult.success) throw new Error(skuResult.error);
+      if (checkError) throw checkError;
 
-    // 각 SKU에 대해 가용성 레코드 생성
-    const availabilityData = skuResult.data.map(sku => ({
-      sku_code: sku.sku_code,
-      date: date,
-      available_slots: 1,
-      booked_slots: 0,
-      blocked: false
-    }));
+      if (existing && existing.length > 0) {
+        const result = { success: true, message: '이미 가용성 데이터가 존재합니다.' };
+        availabilityInitCache.set(cacheKey, result);
+        return result;
+      }
 
-    const { error } = await supabaseClient
-      .from('availability')
-      .insert(availabilityData);
+      // 모든 활성 SKU 조회 (캐시 활용)
+      const skuResult = await getSkuCatalog();
+      if (!skuResult.success) throw new Error(skuResult.error);
 
-    if (error) throw error;
-    return { success: true, message: `${availabilityData.length}개의 가용성 레코드가 생성되었습니다.` };
+      // 각 SKU에 대해 가용성 레코드 생성
+      const availabilityData = skuResult.data.map(sku => ({
+        sku_code: sku.sku_code,
+        date: date,
+        available_slots: 1,
+        booked_slots: 0,
+        blocked: false
+      }));
+
+      // 배치 삽입으로 성능 향상
+      const { error } = await supabaseClient
+        .from('availability')
+        .insert(availabilityData);
+
+      if (error) throw error;
+      
+      const result = { 
+        success: true, 
+        message: `${availabilityData.length}개의 가용성 레코드가 생성되었습니다.` 
+      };
+      
+      // 4. 성공 결과 캐시에 저장
+      availabilityInitCache.set(cacheKey, result);
+      
+      return result;
+      
+    } finally {
+      // 5. 진행 상태 해제
+      initializationInProgress.delete(date);
+    }
+    
   } catch (error) {
     console.error('가용성 초기화 오류:', error);
-    return { success: false, error: error.message };
+    
+    const result = { success: false, error: error.message };
+    
+    // 실패한 경우에도 캐시에 저장 (재시도 방지)
+    const today = new Date().toDateString();
+    const cacheKey = `${date}_${today}`;
+    availabilityInitCache.set(cacheKey, result);
+    
+    return result;
   }
+}
+
+// 캐시 정리 함수 (매일 자정에 호출하거나 수동으로 호출)
+function clearAvailabilityCache() {
+  availabilityInitCache.clear();
+  initializationInProgress.clear();
+  console.log('가용성 초기화 캐시가 정리되었습니다.');
 }
 
 // ===============================
@@ -149,15 +221,56 @@ async function initializeAvailability(date) {
 
 async function createReservation(reservationData) {
   try {
-    const { data, error } = await supabaseClient
-      .from('reservations')
-      .insert([reservationData])
-      .select();
+    // 원자적 예약 함수 호출 (동시성 제어 포함)
+    const { data, error } = await supabaseClient.rpc('create_reservation_atomic', {
+      p_name: reservationData.name,
+      p_phone: reservationData.phone,
+      p_email: reservationData.email || null,
+      p_reservation_date: reservationData.reservation_date,
+      p_reservation_time: reservationData.reservation_time,
+      p_guest_count: reservationData.guest_count || 1,
+      p_service_type: reservationData.service_type || null,
+      p_message: reservationData.message || null
+    });
+    
     if (error) throw error;
-    return { success: true, data };
+    
+    const result = data[0];
+    if (!result.success) {
+      return { 
+        success: false, 
+        error: result.error_msg,
+        code: 'RESERVATION_FAILED'
+      };
+    }
+    
+    return { 
+      success: true, 
+      data: { 
+        id: result.reservation_id,
+        reservation_number: result.reservation_number
+      },
+      message: '예약이 성공적으로 완료되었습니다.',
+      reservation_number: result.reservation_number
+    };
+    
   } catch (error) {
     console.error('예약 신청 생성 오류:', error);
-    return { success: false, error: error.message };
+    
+    // 동시성 오류인 경우 특별한 처리
+    if (error.message && error.message.includes('serialization_failure')) {
+      return { 
+        success: false, 
+        error: '동시 예약으로 인한 충돌이 발생했습니다. 잠시 후 다시 시도해주세요.',
+        code: 'CONCURRENT_BOOKING'
+      };
+    }
+    
+    return { 
+      success: false, 
+      error: error.message || '예약 처리 중 오류가 발생했습니다.',
+      code: 'UNKNOWN_ERROR'
+    };
   }
 }
 
@@ -190,13 +303,26 @@ async function getReservationById(id) {
   }
 }
 
+// 관리자용 예약 업데이트 (기존 호환성 유지)
 async function updateReservation(id, updates) {
   try {
+    // status 업데이트인 경우 적절한 관리자 함수 호출
+    if (updates.status === 'confirmed') {
+      return await adminConfirmReservation(id, updates.admin_notes);
+    } else if (updates.status === 'cancelled') {
+      return await adminCancelReservation(id, updates.cancellation_reason, updates.admin_notes);
+    }
+    
+    // 기타 필드 업데이트는 직접 처리 (권한 확인 후)
     const { data, error } = await supabaseClient
       .from('reservations')
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select();
+      
     if (error) throw error;
     return { success: true, data };
   } catch (error) {
@@ -205,21 +331,132 @@ async function updateReservation(id, updates) {
   }
 }
 
-async function deleteReservation(id) {
+// 관리자용 예약 삭제 (보안 함수 사용)
+async function deleteReservation(id, deletionReason = null) {
   try {
-    const { error } = await supabaseClient
-      .from('reservations')
-      .delete()
-      .eq('id', id);
+    const { data, error } = await supabaseClient.rpc('admin_delete_reservation', {
+      p_reservation_id: id,
+      p_deletion_reason: deletionReason
+    });
+    
     if (error) throw error;
-    return { success: true };
+    
+    const result = data[0];
+    if (!result.success) {
+      return { success: false, error: result.error_msg };
+    }
+    
+    return { success: true, message: '예약이 성공적으로 삭제되었습니다.' };
   } catch (error) {
     console.error('예약 삭제 오류:', error);
     return { success: false, error: error.message };
   }
 }
 
-// 예약 신청을 예약 현황으로 확정
+// ===============================
+// 새로운 관리자 보안 함수들
+// ===============================
+
+// 관리자 예약 승인 (새로운 보안 함수 사용)
+async function adminConfirmReservation(reservationId, adminNotes = null) {
+  try {
+    const { data, error } = await supabaseClient.rpc('admin_confirm_reservation', {
+      p_reservation_id: reservationId,
+      p_admin_notes: adminNotes
+    });
+    
+    if (error) throw error;
+    
+    const result = data[0];
+    if (!result.success) {
+      return { success: false, error: result.error_msg };
+    }
+    
+    return { 
+      success: true, 
+      data: result.reservation_data,
+      message: '예약이 성공적으로 승인되었습니다.'
+    };
+  } catch (error) {
+    console.error('관리자 예약 승인 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 관리자 예약 취소 (새로운 보안 함수 사용)
+async function adminCancelReservation(reservationId, cancellationReason = null, adminNotes = null) {
+  try {
+    const { data, error } = await supabaseClient.rpc('admin_cancel_reservation', {
+      p_reservation_id: reservationId,
+      p_cancellation_reason: cancellationReason,
+      p_admin_notes: adminNotes
+    });
+    
+    if (error) throw error;
+    
+    const result = data[0];
+    if (!result.success) {
+      return { success: false, error: result.error_msg };
+    }
+    
+    return { 
+      success: true, 
+      data: result.reservation_data,
+      message: '예약이 성공적으로 취소되었습니다.'
+    };
+  } catch (error) {
+    console.error('관리자 예약 취소 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 관리자 예약 삭제
+async function adminDeleteReservation(reservationId, deletionReason = null) {
+  try {
+    const { data, error } = await supabaseClient.rpc('admin_delete_reservation', {
+      p_reservation_id: reservationId,
+      p_deletion_reason: deletionReason
+    });
+    
+    if (error) throw error;
+    
+    const result = data[0];
+    if (!result.success) {
+      return { success: false, error: result.error_msg };
+    }
+    
+    return { 
+      success: true, 
+      message: '예약이 성공적으로 삭제되었습니다.'
+    };
+  } catch (error) {
+    console.error('관리자 예약 삭제 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 관리자 권한 조회
+async function getAdminPermissions() {
+  try {
+    const { data: user } = await supabaseClient.auth.getUser();
+    if (!user.user) {
+      return { success: false, error: '로그인이 필요합니다.' };
+    }
+    
+    const { data, error } = await supabaseClient.rpc('get_admin_permissions', {
+      admin_user_id: user.user.id
+    });
+    
+    if (error) throw error;
+    
+    return { success: true, data: data };
+  } catch (error) {
+    console.error('관리자 권한 조회 오류:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// 예약 신청을 예약 현황으로 확정 (기존 함수 - 호환성 유지)
 async function confirmReservation(reservationId, bookingData) {
   try {
     // 트랜잭션 시작
@@ -539,6 +776,7 @@ window.getSkuCatalog = getSkuCatalog;
 window.getAvailableSlots = getAvailableSlots;
 window.getAvailabilityByDate = getAvailabilityByDate;
 window.initializeAvailability = initializeAvailability;
+window.clearAvailabilityCache = clearAvailabilityCache;
 
 // 예약 신청 함수
 window.createReservation = createReservation;
@@ -547,6 +785,12 @@ window.getReservationById = getReservationById;
 window.updateReservation = updateReservation;
 window.deleteReservation = deleteReservation;
 window.confirmReservation = confirmReservation;
+
+// 새로운 관리자 보안 함수들
+window.adminConfirmReservation = adminConfirmReservation;
+window.adminCancelReservation = adminCancelReservation;
+window.adminDeleteReservation = adminDeleteReservation;
+window.getAdminPermissions = getAdminPermissions;
 
 // ===============================
 // 관리자용 고객 계정 연동 함수들

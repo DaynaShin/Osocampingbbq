@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테스트용 예약 생성</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; font-family: monospace; white-space: pre-wrap; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+        .existing-reservations { background: #e7f3ff; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎯 테스트용 예약 생성 및 관리</h1>
+    
+    <!-- 기존 예약 조회 -->
+    <div class="existing-reservations">
+        <h3>📋 기존 예약 현황</h3>
+        <button onclick="loadExistingReservations()">기존 예약 조회</button>
+        <div id="reservationsList"></div>
+    </div>
+    
+    <!-- 테스트 예약 생성 폼 -->
+    <h3>➕ 새 테스트 예약 생성</h3>
+    <form id="reservationForm">
+        <div class="form-group">
+            <label for="customerName">고객명</label>
+            <input type="text" id="customerName" value="홍길동" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customerPhone">전화번호</label>
+            <input type="tel" id="customerPhone" value="010-1234-5678" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customerEmail">이메일</label>
+            <input type="email" id="customerEmail" value="test@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="reservationDate">예약 날짜</label>
+            <input type="date" id="reservationDate" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="reservationTime">예약 시간</label>
+            <select id="reservationTime" required>
+                <option value="10:00">10:00</option>
+                <option value="11:00">11:00</option>
+                <option value="12:00">12:00</option>
+                <option value="13:00">13:00</option>
+                <option value="14:00">14:00</option>
+                <option value="15:00">15:00</option>
+                <option value="16:00">16:00</option>
+                <option value="17:00">17:00</option>
+                <option value="18:00">18:00</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="guestCount">인원수</label>
+            <input type="number" id="guestCount" value="4" min="1" max="20">
+        </div>
+        
+        <div class="form-group">
+            <label for="serviceType">서비스 타입</label>
+            <select id="serviceType">
+                <option value="camping">캠핑</option>
+                <option value="bbq">바베큐</option>
+                <option value="camping_bbq">캠핑+바베큐</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="message">요청사항</label>
+            <textarea id="message" rows="3" placeholder="특별 요청사항이 있으시면 입력해주세요"></textarea>
+        </div>
+        
+        <button type="button" onclick="createTestReservation()">🎯 테스트 예약 생성</button>
+        <button type="button" onclick="createMultipleReservations()">📊 여러 테스트 예약 생성 (5개)</button>
+    </form>
+    
+    <div id="log" class="log"></div>
+
+    <!-- 스크립트 -->
+    <script src="env.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config-v2.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function loadExistingReservations() {
+            try {
+                log('기존 예약 조회 중...', 'info');
+                
+                const { data, error } = await supabaseClient
+                    .from('reservations')
+                    .select('id, customer_name, customer_phone, reservation_date, reservation_time, status, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) {
+                    log(`❌ 예약 조회 실패: ${error.message}`, 'error');
+                    return;
+                }
+                
+                const listDiv = document.getElementById('reservationsList');
+                if (data && data.length > 0) {
+                    log(`✅ ${data.length}개의 예약을 찾았습니다.`, 'success');
+                    listDiv.innerHTML = `
+                        <h4>📋 기존 예약 목록:</h4>
+                        <ul>
+                            ${data.map(r => `
+                                <li>
+                                    <strong>ID: ${r.id}</strong> - ${r.customer_name} 
+                                    (${r.reservation_date} ${r.reservation_time}) 
+                                    [${r.status}]
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <p><strong>💡 테스트 팁:</strong> 위 ID 중 하나를 골라 관리자 테스트에 사용하세요!</p>
+                    `;
+                } else {
+                    log('📝 기존 예약이 없습니다. 새 예약을 생성하세요.', 'info');
+                    listDiv.innerHTML = '<p>📝 기존 예약이 없습니다. 아래에서 테스트 예약을 생성하세요.</p>';
+                }
+            } catch (error) {
+                log(`💥 예약 조회 오류: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTestReservation() {
+            try {
+                const reservationData = {
+                    customer_name: document.getElementById('customerName').value,
+                    customer_phone: document.getElementById('customerPhone').value,
+                    customer_email: document.getElementById('customerEmail').value,
+                    reservation_date: document.getElementById('reservationDate').value,
+                    reservation_time: document.getElementById('reservationTime').value,
+                    guest_count: parseInt(document.getElementById('guestCount').value),
+                    service_type: document.getElementById('serviceType').value,
+                    message: document.getElementById('message').value
+                };
+                
+                log('테스트 예약 생성 중...', 'info');
+                log(`예약 정보: ${JSON.stringify(reservationData, null, 2)}`, 'info');
+                
+                const result = await createReservation({
+                    name: reservationData.customer_name,
+                    phone: reservationData.customer_phone,
+                    email: reservationData.customer_email,
+                    reservation_date: reservationData.reservation_date,
+                    reservation_time: reservationData.reservation_time,
+                    guest_count: reservationData.guest_count,
+                    service_type: reservationData.service_type,
+                    message: reservationData.message
+                });
+                
+                if (result.success) {
+                    log(`✅ 테스트 예약 생성 성공!`, 'success');
+                    log(`📋 예약 ID: ${result.data.id}`, 'success');
+                    log(`🎫 예약 번호: ${result.data.reservation_number}`, 'success');
+                    log('💡 이 예약 ID를 관리자 테스트에 사용하세요!', 'info');
+                    
+                    // 생성 후 목록 새로고침
+                    setTimeout(loadExistingReservations, 1000);
+                } else {
+                    log(`❌ 예약 생성 실패: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 예약 생성 오류: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createMultipleReservations() {
+            const testReservations = [
+                { name: '김철수', phone: '010-1111-1111', service: 'camping', guests: 2 },
+                { name: '이영희', phone: '010-2222-2222', service: 'bbq', guests: 4 },
+                { name: '박민수', phone: '010-3333-3333', service: 'camping_bbq', guests: 6 },
+                { name: '정수진', phone: '010-4444-4444', service: 'camping', guests: 3 },
+                { name: '최다혜', phone: '010-5555-5555', service: 'bbq', guests: 5 }
+            ];
+            
+            const baseDate = new Date();
+            baseDate.setDate(baseDate.getDate() + 1); // 내일 날짜
+            
+            log('여러 테스트 예약 생성 중...', 'info');
+            
+            for (let i = 0; i < testReservations.length; i++) {
+                const testData = testReservations[i];
+                const reservationDate = new Date(baseDate);
+                reservationDate.setDate(reservationDate.getDate() + i);
+                
+                try {
+                    const result = await createReservation({
+                        name: testData.name,
+                        phone: testData.phone,
+                        email: `${testData.name.toLowerCase()}@test.com`,
+                        reservation_date: reservationDate.toISOString().split('T')[0],
+                        reservation_time: `${12 + i}:00`,
+                        guest_count: testData.guests,
+                        service_type: testData.service,
+                        message: `테스트 예약 ${i + 1}`
+                    });
+                    
+                    if (result.success) {
+                        log(`✅ ${testData.name} 예약 생성 성공 (ID: ${result.data.id})`, 'success');
+                    } else {
+                        log(`❌ ${testData.name} 예약 생성 실패: ${result.error}`, 'error');
+                    }
+                    
+                    // 요청 간 간격
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    log(`💥 ${testData.name} 예약 생성 오류: ${error.message}`, 'error');
+                }
+            }
+            
+            log('🎉 여러 테스트 예약 생성 완료!', 'success');
+            setTimeout(loadExistingReservations, 2000);
+        }
+        
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            // 내일 날짜로 기본값 설정
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('reservationDate').value = tomorrow.toISOString().split('T')[0];
+            
+            // 기존 예약 자동 조회
+            loadExistingReservations();
+            
+            log('🎯 테스트용 예약 생성 도구가 준비되었습니다.', 'info');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 보안 시스템 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 20px auto; padding: 20px; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+        .warning { color: #ffc107; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; }
+        button:hover { background: #f8f9fa; }
+        input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .test-result { margin: 10px 0; padding: 8px; border-left: 4px solid #ddd; }
+        .test-result.pass { border-left-color: #28a745; background: #f8fff9; }
+        .test-result.fail { border-left-color: #dc3545; background: #fff8f8; }
+        .admin-info { background: #e7f3ff; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔐 관리자 보안 시스템 테스트</h1>
+    
+    <div class="admin-info">
+        <strong>현재 로그인 상태:</strong> <span id="loginStatus">확인 중...</span><br>
+        <strong>관리자 권한:</strong> <span id="adminPermissions">확인 중...</span>
+    </div>
+
+    <div class="container">
+        <!-- 왼쪽: 관리자 계정 관리 -->
+        <div class="panel">
+            <h3>👤 관리자 계정 관리</h3>
+            
+            <div>
+                <h4>1. 관리자 계정 생성/업데이트</h4>
+                <input type="email" id="adminEmail" placeholder="관리자 이메일" value="admin@osobbq.com">
+                <input type="text" id="adminName" placeholder="관리자 이름" value="OSO Admin">
+                <select id="adminRole">
+                    <option value="admin">관리자</option>
+                    <option value="super_admin">슈퍼 관리자</option>
+                    <option value="viewer">뷰어</option>
+                </select>
+                <button onclick="createAdminAccount()">관리자 계정 생성/업데이트</button>
+            </div>
+            
+            <div>
+                <h4>2. 현재 사용자 권한 확인</h4>
+                <button onclick="checkAdminPermissions()">권한 확인</button>
+            </div>
+            
+            <div id="adminLog" class="log"></div>
+        </div>
+        
+        <!-- 오른쪽: 보안 함수 테스트 -->
+        <div class="panel">
+            <h3>🛡️ 보안 함수 테스트</h3>
+            
+            <div>
+                <h4>테스트할 예약 ID</h4>
+                <input type="number" id="testReservationId" placeholder="예약 ID" value="1">
+                <button onclick="loadTestReservation()">예약 정보 로드</button>
+            </div>
+            
+            <div>
+                <h4>관리자 작업 테스트</h4>
+                <textarea id="adminNotes" placeholder="관리자 메모"></textarea>
+                <textarea id="cancellationReason" placeholder="취소 사유"></textarea>
+                
+                <button onclick="testAdminConfirm()" style="background: #d4edda;">✅ 예약 승인 테스트</button>
+                <button onclick="testAdminCancel()" style="background: #fff3cd;">⚠️ 예약 취소 테스트</button>
+                <button onclick="testAdminDelete()" style="background: #f8d7da;">🗑️ 예약 삭제 테스트</button>
+            </div>
+            
+            <div id="securityLog" class="log"></div>
+        </div>
+    </div>
+    
+    <!-- 하단: 테스트 결과 요약 -->
+    <div class="panel">
+        <h3>📊 테스트 결과 요약</h3>
+        <div id="testResults"></div>
+        <button onclick="runAllTests()">🚀 전체 보안 테스트 실행</button>
+        <button onclick="clearAllLogs()">🗑️ 모든 로그 클리어</button>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="env.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config-v2.js"></script>
+    
+    <script>
+        let testResults = [];
+        
+        function log(message, type = 'info', logId = 'adminLog') {
+            const logDiv = document.getElementById(logId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function addTestResult(testName, passed, details) {
+            testResults.push({ testName, passed, details, timestamp: new Date().toLocaleTimeString() });
+            updateTestResultsDisplay();
+        }
+        
+        function updateTestResultsDisplay() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = testResults.map(result => 
+                `<div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                    <strong>${result.testName}</strong> [${result.timestamp}]<br>
+                    ${result.details}
+                </div>`
+            ).join('');
+        }
+        
+        async function checkLoginStatus() {
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const statusSpan = document.getElementById('loginStatus');
+                
+                if (user) {
+                    statusSpan.innerHTML = `✅ 로그인됨: ${user.email}`;
+                    statusSpan.className = 'success';
+                    return user;
+                } else {
+                    statusSpan.innerHTML = '❌ 로그인되지 않음';
+                    statusSpan.className = 'error';
+                    return null;
+                }
+            } catch (error) {
+                document.getElementById('loginStatus').innerHTML = `❌ 오류: ${error.message}`;
+                return null;
+            }
+        }
+        
+        async function createAdminAccount() {
+            try {
+                const email = document.getElementById('adminEmail').value;
+                const name = document.getElementById('adminName').value;
+                const role = document.getElementById('adminRole').value;
+                
+                log('관리자 계정 생성 시도 중...', 'info', 'adminLog');
+                
+                // 먼저 현재 사용자가 로그인되어 있는지 확인
+                const user = await checkLoginStatus();
+                if (!user) {
+                    log('❌ 로그인이 필요합니다. 관리자 계정으로 로그인하세요.', 'error', 'adminLog');
+                    return;
+                }
+                
+                const { data, error } = await supabaseClient.rpc('create_test_admin', {
+                    admin_email: email,
+                    admin_name: name,
+                    admin_role: role
+                });
+                
+                if (error) {
+                    log(`❌ 관리자 계정 생성 실패: ${error.message}`, 'error', 'adminLog');
+                    addTestResult('관리자 계정 생성', false, error.message);
+                } else {
+                    log(`✅ 관리자 계정 생성/업데이트 성공: ${email} (${role})`, 'success', 'adminLog');
+                    addTestResult('관리자 계정 생성', true, `${email} (${role})`);
+                    await checkAdminPermissions();
+                }
+            } catch (error) {
+                log(`💥 오류: ${error.message}`, 'error', 'adminLog');
+                addTestResult('관리자 계정 생성', false, error.message);
+            }
+        }
+        
+        async function checkAdminPermissions() {
+            try {
+                log('관리자 권한 확인 중...', 'info', 'adminLog');
+                
+                const result = await getAdminPermissions();
+                const permSpan = document.getElementById('adminPermissions');
+                
+                if (result.success) {
+                    const permissions = result.data;
+                    log(`✅ 권한 조회 성공: ${JSON.stringify(permissions, null, 2)}`, 'success', 'adminLog');
+                    permSpan.innerHTML = `✅ 권한 있음 (예약: ${permissions?.reservations?.write ? '쓰기가능' : '읽기전용'})`;
+                    permSpan.className = 'success';
+                    addTestResult('관리자 권한 확인', true, JSON.stringify(permissions));
+                } else {
+                    log(`❌ 권한 조회 실패: ${result.error}`, 'error', 'adminLog');
+                    permSpan.innerHTML = `❌ 권한 없음: ${result.error}`;
+                    permSpan.className = 'error';
+                    addTestResult('관리자 권한 확인', false, result.error);
+                }
+            } catch (error) {
+                log(`💥 권한 확인 오류: ${error.message}`, 'error', 'adminLog');
+                addTestResult('관리자 권한 확인', false, error.message);
+            }
+        }
+        
+        async function loadTestReservation() {
+            const reservationId = document.getElementById('testReservationId').value;
+            try {
+                log(`예약 ID ${reservationId} 정보 로드 중...`, 'info', 'securityLog');
+                
+                const { data, error } = await supabaseClient
+                    .from('reservations')
+                    .select('*')
+                    .eq('id', reservationId)
+                    .single();
+                    
+                if (error) {
+                    log(`❌ 예약 로드 실패: ${error.message}`, 'error', 'securityLog');
+                } else {
+                    log(`✅ 예약 로드 성공: ${data.customer_name} - ${data.status}`, 'success', 'securityLog');
+                }
+            } catch (error) {
+                log(`💥 예약 로드 오류: ${error.message}`, 'error', 'securityLog');
+            }
+        }
+        
+        async function testAdminConfirm() {
+            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const adminNotes = document.getElementById('adminNotes').value;
+            
+            try {
+                log(`예약 ID ${reservationId} 승인 테스트 중...`, 'info', 'securityLog');
+                
+                const result = await adminConfirmReservation(reservationId, adminNotes);
+                
+                if (result.success) {
+                    log(`✅ 예약 승인 성공!`, 'success', 'securityLog');
+                    addTestResult('관리자 예약 승인', true, `예약 ID: ${reservationId}`);
+                } else {
+                    log(`❌ 예약 승인 실패: ${result.error}`, 'error', 'securityLog');
+                    addTestResult('관리자 예약 승인', false, result.error);
+                }
+            } catch (error) {
+                log(`💥 승인 테스트 오류: ${error.message}`, 'error', 'securityLog');
+                addTestResult('관리자 예약 승인', false, error.message);
+            }
+        }
+        
+        async function testAdminCancel() {
+            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const cancellationReason = document.getElementById('cancellationReason').value;
+            const adminNotes = document.getElementById('adminNotes').value;
+            
+            try {
+                log(`예약 ID ${reservationId} 취소 테스트 중...`, 'info', 'securityLog');
+                
+                const result = await adminCancelReservation(reservationId, cancellationReason, adminNotes);
+                
+                if (result.success) {
+                    log(`✅ 예약 취소 성공!`, 'success', 'securityLog');
+                    addTestResult('관리자 예약 취소', true, `예약 ID: ${reservationId}`);
+                } else {
+                    log(`❌ 예약 취소 실패: ${result.error}`, 'error', 'securityLog');
+                    addTestResult('관리자 예약 취소', false, result.error);
+                }
+            } catch (error) {
+                log(`💥 취소 테스트 오류: ${error.message}`, 'error', 'securityLog');
+                addTestResult('관리자 예약 취소', false, error.message);
+            }
+        }
+        
+        async function testAdminDelete() {
+            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const deletionReason = document.getElementById('cancellationReason').value || '테스트 삭제';
+            
+            if (!confirm('⚠️ 정말로 예약을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+            
+            try {
+                log(`예약 ID ${reservationId} 삭제 테스트 중...`, 'info', 'securityLog');
+                
+                const result = await adminDeleteReservation(reservationId, deletionReason);
+                
+                if (result.success) {
+                    log(`✅ 예약 삭제 성공!`, 'success', 'securityLog');
+                    addTestResult('관리자 예약 삭제', true, `예약 ID: ${reservationId}`);
+                } else {
+                    log(`❌ 예약 삭제 실패: ${result.error}`, 'error', 'securityLog');
+                    addTestResult('관리자 예약 삭제', false, result.error);
+                }
+            } catch (error) {
+                log(`💥 삭제 테스트 오류: ${error.message}`, 'error', 'securityLog');
+                addTestResult('관리자 예약 삭제', false, error.message);
+            }
+        }
+        
+        async function runAllTests() {
+            log('🚀 전체 보안 테스트 시작...', 'info', 'securityLog');
+            testResults = [];
+            
+            // 순차 테스트 실행
+            await checkAdminPermissions();
+            await loadTestReservation();
+            
+            log('✨ 전체 보안 테스트 완료!', 'success', 'securityLog');
+        }
+        
+        function clearAllLogs() {
+            document.getElementById('adminLog').innerHTML = '';
+            document.getElementById('securityLog').innerHTML = '';
+            testResults = [];
+            updateTestResultsDisplay();
+        }
+        
+        // 페이지 로드 시 초기화
+        window.onload = async function() {
+            log('🔗 관리자 보안 시스템 테스트 시작...', 'info', 'adminLog');
+            await checkLoginStatus();
+            await checkAdminPermissions();
+        };
+    </script>
+</body>
+</html>

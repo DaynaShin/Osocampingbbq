@@ -2,7 +2,7 @@
   "name": "2.develope",
   "version": "1.0.0",
   "description": "간편한 예약 신청 및 관리 시스템입니다.",
-  "main": "supabase-config.js",
+  "main": "supabase-config-v2.js",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",

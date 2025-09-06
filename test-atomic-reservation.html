@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원자적 예약 시스템 테스트</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        pre { background: #343a40; color: #ffffff; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .log { margin-top: 20px; }
+        .concurrent-test { background: #e3f2fd; border-color: #2196f3; }
+    </style>
+</head>
+<body>
+    <h1>🧪 원자적 예약 시스템 테스트</h1>
+    <p>수정된 예약 시스템의 동작을 테스트합니다.</p>
+
+    <!-- DB 함수 존재 확인 -->
+    <div class="test-card" id="function-check">
+        <h3>1. DB 함수 존재 확인</h3>
+        <button onclick="checkAtomicFunction()">함수 존재 여부 확인</button>
+        <div id="function-result"></div>
+    </div>
+
+    <!-- 기본 예약 테스트 -->
+    <div class="test-card" id="basic-test">
+        <h3>2. 기본 예약 테스트</h3>
+        <button onclick="testBasicReservation()">단일 예약 생성 테스트</button>
+        <div id="basic-result"></div>
+    </div>
+
+    <!-- 동시성 테스트 -->
+    <div class="test-card concurrent-test" id="concurrent-test">
+        <h3>3. 동시성 테스트 (중요!)</h3>
+        <p>같은 슬롯에 동시에 여러 예약을 시도하여 중복 예약이 방지되는지 확인합니다.</p>
+        <button onclick="testConcurrentReservations()">동시 예약 충돌 테스트</button>
+        <div id="concurrent-result"></div>
+    </div>
+
+    <!-- 에러 처리 테스트 -->
+    <div class="test-card" id="error-test">
+        <h3>4. 에러 처리 테스트</h3>
+        <button onclick="testErrorHandling()">잘못된 데이터로 테스트</button>
+        <div id="error-result"></div>
+    </div>
+
+    <div class="log">
+        <h3>📋 테스트 로그</h3>
+        <pre id="log"></pre>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="env.js"></script>
+    <script src="supabase-config-v2.js"></script>
+    
+    <script>
+        const log = document.getElementById('log');
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logLine = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            log.textContent += logLine;
+            log.scrollTop = log.scrollHeight;
+            console.log(logLine.trim());
+        }
+
+        // 1. DB 함수 존재 확인
+        async function checkAtomicFunction() {
+            const resultDiv = document.getElementById('function-result');
+            try {
+                addLog('create_reservation_atomic 함수 존재 여부 확인 중...');
+                
+                // 더미 데이터로 함수 호출 (실제로는 실행하지 않음)
+                const { error } = await supabaseClient.rpc('create_reservation_atomic', {
+                    p_name: 'TEST_CHECK',
+                    p_phone: '000-0000-0000',
+                    p_reservation_date: '2025-12-31',
+                    p_reservation_time: '23:59:00',
+                    p_guest_count: 1
+                });
+                
+                if (error && error.message.includes('function create_reservation_atomic')) {
+                    resultDiv.innerHTML = '<div class="error">❌ 함수가 존재하지 않습니다. Supabase에서 SQL 스크립트를 실행해주세요.</div>';
+                    addLog('함수가 존재하지 않음', 'error');
+                } else {
+                    resultDiv.innerHTML = '<div class="success">✅ 함수가 존재합니다!</div>';
+                    addLog('함수 존재 확인 완료', 'success');
+                }
+            } catch (error) {
+                if (error.message.includes('function create_reservation_atomic')) {
+                    resultDiv.innerHTML = '<div class="error">❌ 함수가 존재하지 않습니다. Supabase에서 SQL 스크립트를 실행해주세요.</div>';
+                    addLog('함수가 존재하지 않음', 'error');
+                } else {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ 함수는 존재하지만 테스트 데이터가 처리되지 않았습니다.</div>';
+                    addLog('함수 존재 추정됨', 'warning');
+                }
+            }
+        }
+
+        // 2. 기본 예약 테스트
+        async function testBasicReservation() {
+            const resultDiv = document.getElementById('basic-result');
+            try {
+                addLog('기본 예약 테스트 시작');
+                
+                const testData = {
+                    name: '테스트 사용자',
+                    phone: '010-1234-5678',
+                    email: 'test@example.com',
+                    reservation_date: '2025-12-25',
+                    reservation_time: '10:00:00',
+                    guest_count: 2,
+                    service_type: '테스트 서비스',
+                    message: '원자적 예약 시스템 테스트입니다.'
+                };
+
+                const result = await createReservation(testData);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ 예약 성공!<br>예약번호: ${result.reservation_number}<br>ID: ${result.data.id}</div>`;
+                    addLog(`예약 성공: ${result.reservation_number}`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ 예약 실패: ${result.error}</div>`;
+                    addLog(`예약 실패: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 테스트 오류: ${error.message}</div>`;
+                addLog(`테스트 오류: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. 동시성 테스트
+        async function testConcurrentReservations() {
+            const resultDiv = document.getElementById('concurrent-result');
+            addLog('동시성 테스트 시작 - 같은 슬롯에 5개 예약 시도');
+            
+            const promises = [];
+            const testSlot = {
+                reservation_date: '2025-12-20',
+                reservation_time: '14:00:00'
+            };
+
+            // 5개의 동시 예약 시도
+            for (let i = 1; i <= 5; i++) {
+                const testData = {
+                    name: `동시테스트${i}`,
+                    phone: `010-1111-${i.toString().padStart(4, '0')}`,
+                    email: `test${i}@example.com`,
+                    reservation_date: testSlot.reservation_date,
+                    reservation_time: testSlot.reservation_time,
+                    guest_count: 1,
+                    message: `동시성 테스트 ${i}`
+                };
+                promises.push(createReservation(testData));
+            }
+
+            try {
+                const results = await Promise.all(promises);
+                
+                const successful = results.filter(r => r.success).length;
+                const failed = results.filter(r => !r.success).length;
+                
+                let html = `<div class="success">📊 동시성 테스트 결과:</div>`;
+                html += `<ul>`;
+                html += `<li>성공한 예약: ${successful}개</li>`;
+                html += `<li>실패한 예약: ${failed}개</li>`;
+                html += `</ul>`;
+                
+                if (successful === 1 && failed === 4) {
+                    html += `<div class="success">✅ 동시성 제어 성공! 정확히 1개만 예약됨</div>`;
+                    addLog('동시성 테스트 통과 - 1개만 성공', 'success');
+                } else if (successful > 1) {
+                    html += `<div class="error">❌ 중복 예약 발생! ${successful}개가 모두 성공함</div>`;
+                    addLog(`중복 예약 발생: ${successful}개 성공`, 'error');
+                } else {
+                    html += `<div class="warning">⚠️ 예상과 다른 결과</div>`;
+                    addLog(`예상과 다른 결과: 성공 ${successful}, 실패 ${failed}`, 'warning');
+                }
+
+                // 실패 이유 분석
+                results.forEach((result, index) => {
+                    if (!result.success) {
+                        addLog(`예약 ${index + 1} 실패: ${result.error}`, 'info');
+                    }
+                });
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 동시성 테스트 오류: ${error.message}</div>`;
+                addLog(`동시성 테스트 오류: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. 에러 처리 테스트
+        async function testErrorHandling() {
+            const resultDiv = document.getElementById('error-result');
+            addLog('에러 처리 테스트 시작');
+            
+            const invalidData = {
+                name: '', // 빈 이름
+                phone: 'invalid-phone', // 잘못된 전화번호
+                reservation_date: 'invalid-date', // 잘못된 날짜
+                reservation_time: '25:00:00' // 잘못된 시간
+            };
+
+            try {
+                const result = await createReservation(invalidData);
+                
+                if (!result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ 에러 처리 정상: ${result.error}</div>`;
+                    addLog(`에러 처리 정상: ${result.error}`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ 잘못된 데이터가 통과됨</div>`;
+                    addLog('잘못된 데이터가 통과됨', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="success">✅ JavaScript 레벨에서 에러 처리됨: ${error.message}</div>`;
+                addLog(`JavaScript 에러 처리: ${error.message}`, 'success');
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('원자적 예약 시스템 테스트 페이지 로드 완료');
+            addLog('먼저 "함수 존재 여부 확인" 버튼을 클릭해주세요');
+        });
+    </script>
+</body>
+</html>
