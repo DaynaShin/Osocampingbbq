@@ -215,7 +215,7 @@
                 if (error) {
                     log(`❌ 예약 로드 실패: ${error.message}`, 'error', 'securityLog');
                 } else {
-                    log(`✅ 예약 로드 성공: ${data.customer_name} - ${data.status}`, 'success', 'securityLog');
+                    log(`✅ 예약 로드 성공: ${data.name} - ${data.status}`, 'success', 'securityLog');
                 }
             } catch (error) {
                 log(`💥 예약 로드 오류: ${error.message}`, 'error', 'securityLog');
@@ -223,7 +223,7 @@
         }
         
         async function testAdminConfirm() {
-            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const reservationId = document.getElementById('testReservationId').value;
             const adminNotes = document.getElementById('adminNotes').value;
             
             try {
@@ -245,7 +245,7 @@
         }
         
         async function testAdminCancel() {
-            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const reservationId = document.getElementById('testReservationId').value;
             const cancellationReason = document.getElementById('cancellationReason').value;
             const adminNotes = document.getElementById('adminNotes').value;
             
@@ -268,7 +268,7 @@
         }
         
         async function testAdminDelete() {
-            const reservationId = parseInt(document.getElementById('testReservationId').value);
+            const reservationId = document.getElementById('testReservationId').value;
             const deletionReason = document.getElementById('cancellationReason').value || '테스트 삭제';
             
             if (!confirm('⚠️ 정말로 예약을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {

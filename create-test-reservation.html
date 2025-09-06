@@ -111,7 +111,7 @@
                 
                 const { data, error } = await supabaseClient
                     .from('reservations')
-                    .select('id, customer_name, customer_phone, reservation_date, reservation_time, status, created_at')
+                    .select('id, name, phone, reservation_date, reservation_time, status, created_at')
                     .order('created_at', { ascending: false })
                     .limit(10);
                 
@@ -128,7 +128,7 @@
                         <ul>
                             ${data.map(r => `
                                 <li>
-                                    <strong>ID: ${r.id}</strong> - ${r.customer_name} 
+                                    <strong>ID: ${r.id}</strong> - ${r.name} 
                                     (${r.reservation_date} ${r.reservation_time}) 
                                     [${r.status}]
                                 </li>

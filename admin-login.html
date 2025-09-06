@@ -545,15 +545,17 @@
             
             async verifyAdminPermissions(user) {
                 try {
-                    // 관리자 프로필 존재 확인
-                    const { data, error } = await this.supabaseClient
-                        .from('admin_profiles')
-                        .select('id, role, is_active')
-                        .eq('id', user.id)
-                        .eq('is_active', true)
-                        .single();
+                    // 이메일 기반 관리자 권한 확인
+                    const { data, error } = await this.supabaseClient.rpc('verify_admin_by_email', {
+                        p_email: user.email
+                    });
                     
-                    return !error && data && data.is_active;
+                    if (error) {
+                        console.error('관리자 권한 확인 오류:', error);
+                        return false;
+                    }
+                    
+                    return data && data.length > 0 && data[0].is_admin === true;
                 } catch (error) {
                     console.error('관리자 권한 확인 실패:', error);
                     return false;
